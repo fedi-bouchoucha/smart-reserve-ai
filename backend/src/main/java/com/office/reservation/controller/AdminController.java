@@ -6,6 +6,7 @@ import com.office.reservation.entity.ReservationStatus;
 import com.office.reservation.entity.Role;
 import com.office.reservation.repository.ReservationRepository;
 import com.office.reservation.repository.UserRepository;
+import com.office.reservation.repository.ChangeRequestRepository;
 import com.office.reservation.service.ChangeRequestService;
 import com.office.reservation.service.ReservationService;
 import com.office.reservation.service.UserService;
@@ -28,20 +29,22 @@ public class AdminController {
     private final ChangeRequestService changeRequestService;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
+    private final ChangeRequestRepository changeRequestRepository;
 
     public AdminController(UserService userService,
-            ReservationService reservationService,
-            ChangeRequestService changeRequestService,
-            UserRepository userRepository,
-            ReservationRepository reservationRepository) {
+                          ReservationService reservationService,
+                          ChangeRequestService changeRequestService,
+                          UserRepository userRepository,
+                          ReservationRepository reservationRepository,
+                          ChangeRequestRepository changeRequestRepository) {
         this.userService = userService;
         this.reservationService = reservationService;
         this.changeRequestService = changeRequestService;
         this.userRepository = userRepository;
         this.reservationRepository = reservationRepository;
+        this.changeRequestRepository = changeRequestRepository;
     }
 
-    // User management
     @GetMapping("/users")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
@@ -75,7 +78,6 @@ public class AdminController {
         }
     }
 
-    // Statistics
     @GetMapping("/statistics")
     public ResponseEntity<Map<String, Object>> getStatistics() {
         Map<String, Object> stats = new HashMap<>();
@@ -89,41 +91,41 @@ public class AdminController {
         stats.put("totalManagers", totalManagers);
         stats.put("totalAdmins", totalAdmins);
 
-        // Today's stats
         LocalDate today = LocalDate.now();
         stats.put("todayOccupancy", reservationService.getOccupancyCount(today));
-        stats.put("todayMeetsMinimum", reservationService.checkMinimumOccupancy(today));
-
-        // Total reservations
         stats.put("totalReservations", reservationRepository.count());
-        stats.put("confirmedReservations",
-                reservationRepository.countByDateAndStatus(today, ReservationStatus.CONFIRMED));
-
-        // Weekly stats (current week Mon-Fri)
-        LocalDate monday = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
-        Map<String, Long> weeklyOccupancy = new HashMap<>();
-        for (int i = 0; i < 5; i++) {
-            LocalDate day = monday.plusDays(i);
-            weeklyOccupancy.put(day.getDayOfWeek().name(),
-                    reservationRepository.countByDateAndStatus(day, ReservationStatus.CONFIRMED));
-        }
-        stats.put("weeklyOccupancy", weeklyOccupancy);
-
-        // Change requests
         stats.put("totalChangeRequests", changeRequestService.getAllChangeRequests().size());
-
+        
         return ResponseEntity.ok(stats);
     }
 
-    // All reservations
     @GetMapping("/reservations")
     public ResponseEntity<?> getAllReservations() {
         return ResponseEntity.ok(reservationService.getAllReservations());
     }
 
-    // All change requests
     @GetMapping("/change-requests")
     public ResponseEntity<?> getAllChangeRequests() {
         return ResponseEntity.ok(changeRequestService.getAllChangeRequests());
+    }
+
+    @DeleteMapping("/reservations/{id}")
+    public ResponseEntity<?> deleteReservation(@PathVariable Long id) {
+        try {
+            reservationRepository.deleteById(id);
+            return ResponseEntity.ok(Map.of("message", "Reservation deleted"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/change-requests/{id}")
+    public ResponseEntity<?> deleteChangeRequest(@PathVariable Long id) {
+        try {
+            changeRequestRepository.deleteById(id);
+            return ResponseEntity.ok(Map.of("message", "Change request deleted"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

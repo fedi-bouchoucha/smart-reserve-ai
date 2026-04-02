@@ -7,6 +7,7 @@ import com.office.reservation.entity.User;
 import com.office.reservation.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +23,13 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    public UserResponse findByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return mapToResponse(user);
+    }
+
+    @Transactional
     public UserResponse createUser(UserCreateRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username already exists");
@@ -32,7 +40,7 @@ public class UserService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
                 .email(request.getEmail())
-                .role(Role.valueOf(request.getRole()))
+                .role(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.EMPLOYEE)
                 .build();
 
         if (request.getManagerId() != null) {
@@ -63,10 +71,12 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
 
+    @Transactional
     public UserResponse updateUser(Long id, UserCreateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -87,6 +97,23 @@ public class UserService {
 
         User saved = userRepository.save(user);
         return mapToResponse(saved);
+    }
+
+    @Transactional
+    public UserResponse updateProfile(Long id, String fullName, String email) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setFullName(fullName);
+        user.setEmail(email);
+        return mapToResponse(userRepository.save(user));
+    }
+
+    @Transactional
+    public void resetPassword(String username, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
     private UserResponse mapToResponse(User user) {

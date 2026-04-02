@@ -70,6 +70,8 @@ CREATE TABLE change_requests (
     new_date DATE,
     new_chair_id BIGINT,
     new_meeting_room_id BIGINT,
+    start_time TIME,
+    end_time TIME,
     status VARCHAR(50) NOT NULL, -- 'PENDING', 'APPROVED', 'REJECTED'
     manager_comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

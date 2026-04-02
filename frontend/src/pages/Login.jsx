@@ -60,6 +60,11 @@ export default function Login() {
                     <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
                         {loading ? 'Signing in...' : 'Sign In'}
                     </button>
+
+                    <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '0.9rem' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Don't have an account? </span>
+                        <Link to="/register" style={{ color: 'var(--accent)', fontWeight: '700', textDecoration: 'none' }}>Register here</Link>
+                    </div>
                 </form>
 
                 <div style={{ marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>

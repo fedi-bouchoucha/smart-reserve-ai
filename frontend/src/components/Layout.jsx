@@ -34,6 +34,9 @@ export default function Layout({ children }) {
                             <span>⚙️</span> <span>Administration</span>
                         </NavLink>
                     )}
+                    <NavLink to="/profile" className={({ isActive }) => isActive ? 'active' : ''}>
+                        <span>👤</span> <span>My Profile</span>
+                    </NavLink>
                     <button onClick={handleLogout}>
                         <span>🚪</span> <span>Sign Out</span>
                     </button>

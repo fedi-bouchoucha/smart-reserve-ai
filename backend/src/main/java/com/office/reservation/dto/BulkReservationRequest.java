@@ -2,21 +2,22 @@ package com.office.reservation.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
-public class ReservationRequest {
+public class BulkReservationRequest {
     private Long chairId;
     private Long meetingRoomId;
-    private LocalDate date;
+    private List<LocalDate> dates;
     private LocalTime startTime;
     private LocalTime endTime;
 
-    public ReservationRequest() {
+    public BulkReservationRequest() {
     }
 
-    public ReservationRequest(Long chairId, Long meetingRoomId, LocalDate date, LocalTime startTime, LocalTime endTime) {
+    public BulkReservationRequest(Long chairId, Long meetingRoomId, List<LocalDate> dates, LocalTime startTime, LocalTime endTime) {
         this.chairId = chairId;
         this.meetingRoomId = meetingRoomId;
-        this.date = date;
+        this.dates = dates;
         this.startTime = startTime;
         this.endTime = endTime;
     }
@@ -37,12 +38,12 @@ public class ReservationRequest {
         this.meetingRoomId = meetingRoomId;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public List<LocalDate> getDates() {
+        return dates;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setDates(List<LocalDate> dates) {
+        this.dates = dates;
     }
 
     public LocalTime getStartTime() {
