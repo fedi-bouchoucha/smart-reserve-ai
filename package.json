@@ -1,0 +1,23 @@
+{
+  "name": "app_ressource",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">\r   <h3>A modern, intelligent workspace booking platform tailored for agile teams.</h3>\r </div>",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fedi-bouchoucha/smart-reserve-ai.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fedi-bouchoucha/smart-reserve-ai/issues"
+  },
+  "homepage": "https://github.com/fedi-bouchoucha/smart-reserve-ai#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.5.2"
+  }
+}

@@ -24,6 +24,7 @@ It empowers employees to effortlessly book desks, while giving managers and admi
 - **📅 Interactive Booking Calendar:** Powered by FullCalendar with aesthetic, dynamic event management.
 - **📊 Analytics Dashboard:** Visualized utilization mapping and reporting via Recharts.
 - **🖼️ Profile Customization:** Personalized accounts, including base64 frictionless profile picture uploads.
+- **🔔 Real-time Notifications:** Instant feedback via WebSockets (STOMP) and automated Email alerts for reservation status changes.
 - **🌙 Theming & UI/UX:** Responsive, modern UI enhanced with Framer Motion animations and global Dark/Light modes.
 
 ---
@@ -36,6 +37,7 @@ It empowers employees to effortlessly book desks, while giving managers and admi
 - **UI Components & Icons:** Lucide React, Framer Motion
 - **Data Visualization & Calendars:** Recharts, FullCalendar
 - **Networking:** Axios
+- **E2E Testing:** Playwright (Page Object Model)
 
 ### Backend
 - **Core:** Java 17 + Spring Boot 3.2.2
@@ -64,7 +66,6 @@ Before starting, ensure you have the following installed on your machine:
 - **Node.js (v18+) & npm**
 - **PostgreSQL (v13+)**
 
----
 ---
 
 ## 🚀 Installation & Setup
@@ -105,6 +106,23 @@ Once both environments are running, navigate to `http://localhost:5173` in your 
 
 ---
 
+## 🎭 E2E Testing
+
+The project includes a comprehensive end-to-end testing suite powered by **Playwright**.
+
+To run the tests locally:
+1. Ensure the backend and frontend are running.
+2. Execute the following command in the root directory:
+```bash
+npx playwright test
+```
+To open the interactive UI mode for debugging:
+```bash
+npx playwright test --ui
+```
+
+---
+
 ## 📚 API Documentation
 
 The backend leverages OpenAPI standards to self-document standard endpoint structures and required HTTP payload definitions.
@@ -126,7 +144,6 @@ With the backend active, visit the interactive Swagger UI panel:
 
 - [ ] Interactive structural office map allowing spatial desk-clicking reservations.
 - [ ] Implement Redis server caching to offload intense analytical operations.
-- [ ] Advanced end-to-end (E2E) testing routines (e.g., Cypress/Playwright).
 
 ---
 

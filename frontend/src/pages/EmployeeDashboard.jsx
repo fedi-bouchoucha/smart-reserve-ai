@@ -218,10 +218,10 @@ export default function EmployeeDashboard() {
                     <p style={{ color: 'hsl(var(--muted-foreground))' }}>Office presence and resource management</p>
                 </div>
                 <div className="tabs">
-                    <button className={`tab-btn ${tab === 'reservations' ? 'active' : ''}`} onClick={() => setTab('reservations')}>
+                    <button className={`tab-btn ${tab === 'reservations' ? 'active' : ''}`} onClick={() => setTab('reservations')} data-testid="tab-reservations">
                         <List size={16} /> <span>Bookings</span>
                     </button>
-                    <button className={`tab-btn ${tab === 'new' ? 'active' : ''}`} onClick={() => setTab('new')}>
+                    <button className={`tab-btn ${tab === 'new' ? 'active' : ''}`} onClick={() => setTab('new')} data-testid="tab-new-reservation">
                         <PlusCircle size={16} /> <span>New Reservation</span>
                     </button>
                 </div>
@@ -242,9 +242,9 @@ export default function EmployeeDashboard() {
                         <thead><tr><th>Date</th><th>Workspace / Room</th><th style={{ textAlign: 'right' }}>Action</th></tr></thead>
                         <tbody>
                             {reservations.length === 0 ? (
-                                <tr><td colSpan="3" style={{ textAlign: 'center', padding: '3rem', color: 'hsl(var(--muted-foreground))' }}>No active bookings</td></tr>
+                                <tr data-testid="no-reservations-row"><td colSpan="3" style={{ textAlign: 'center', padding: '3rem', color: 'hsl(var(--muted-foreground))' }}>No active bookings</td></tr>
                             ) : reservations.map(r => (
-                                <tr key={r.id}>
+                                <tr key={r.id} data-testid={`reservation-row-${r.id}`}>
                                     <td style={{ fontWeight: 600 }}>{r.date}</td>
                                     <td><div className="badge-ui badge-indigo">{r.chairInfo ? `🪑 ${r.chairInfo}` : `🏢 ${r.meetingRoomName}`}</div></td>
                                     <td style={{ textAlign: 'right' }}>
@@ -364,6 +364,7 @@ export default function EmployeeDashboard() {
                                     <div style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', padding: '1rem', textAlign: 'center' }}>Select dates first to see available resources</div>
                                 ) : (resourceType === 'chair' ? chairs : rooms).map(r => (
                                     <div key={r.id}
+                                        data-testid={`resource-item-${r.id}`}
                                         className={`resource-card ${(resourceType === 'chair' ? selectedChair : selectedRoom) === r.id ? 'selected' : ''}`}
                                         onClick={() => resourceType === 'chair' ? setSelectedChair(r.id) : setSelectedRoom(r.id)}
                                     >
@@ -388,6 +389,7 @@ export default function EmployeeDashboard() {
                         <button className="btn-ui btn-primary" style={{ width: '100%', marginTop: '2rem' }}
                             onClick={handleReserve}
                             disabled={selectedDates.length === 0 || (!selectedChair && !selectedRoom)}
+                            data-testid="complete-booking-btn"
                         >
                             Complete Booking ({selectedDates.length})
                         </button>

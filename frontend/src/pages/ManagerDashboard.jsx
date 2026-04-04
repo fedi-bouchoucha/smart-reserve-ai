@@ -131,12 +131,12 @@ export default function ManagerDashboard() {
             </AnimatePresence>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
-                <div className="card-modern" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                <div className="card-modern" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }} data-testid="pending-requests-card">
                     <div style={{ background: 'hsl(var(--primary) / 0.1)', padding: '0.75rem', borderRadius: '0.75rem', color: 'hsl(var(--primary))' }}>
                         <ClipboardCheck size={24} />
                     </div>
                     <div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{pendingRequests.length}</div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }} data-testid="pending-requests-count">{pendingRequests.length}</div>
                         <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase' }}>Attention Required</div>
                     </div>
                 </div>
@@ -152,10 +152,10 @@ export default function ManagerDashboard() {
             </div>
 
             <div className="tabs" style={{ marginBottom: '1.5rem' }}>
-                <button className={`tab-btn ${tab === 'requests' ? 'active' : ''}`} onClick={() => setTab('requests')}>
+                <button className={`tab-btn ${tab === 'requests' ? 'active' : ''}`} onClick={() => setTab('requests')} data-testid="tab-requests">
                     <ClipboardCheck size={16} /> <span>Change Requests</span>
                 </button>
-                <button className={`tab-btn ${tab === 'team' ? 'active' : ''}`} onClick={() => setTab('team')}>
+                <button className={`tab-btn ${tab === 'team' ? 'active' : ''}`} onClick={() => setTab('team')} data-testid="tab-team">
                     <Users size={16} /> <span>My Team</span>
                 </button>
             </div>
@@ -195,11 +195,18 @@ export default function ManagerDashboard() {
                                             </td>
                                             <td style={{ textAlign: 'right' }}>
                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                    <button className="btn-ui btn-primary btn-sm" onClick={() => setCommentModal({ id: cr.id, action: 'approve' })}>
+                                                    <button className="btn-ui btn-primary btn-sm" 
+                                                        onClick={() => setCommentModal({ id: cr.id, action: 'approve' })}
+                                                        data-testid={`approve-btn-${cr.id}`}
+                                                    >
                                                         <Check size={16} />
                                                         <span>Approve</span>
                                                     </button>
-                                                    <button className="btn-ui btn-outline btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => setCommentModal({ id: cr.id, action: 'reject' })}>
+                                                    <button className="btn-ui btn-outline btn-sm" 
+                                                        style={{ color: 'hsl(var(--destructive))' }} 
+                                                        onClick={() => setCommentModal({ id: cr.id, action: 'reject' })}
+                                                        data-testid={`reject-btn-${cr.id}`}
+                                                    >
                                                         <X size={16} />
                                                         <span>Reject</span>
                                                     </button>
@@ -355,6 +362,7 @@ export default function ManagerDashboard() {
                                 <button
                                     className={`btn-ui ${commentModal.action === 'approve' ? 'btn-primary' : 'btn-danger'}`}
                                     onClick={handleAction}
+                                    data-testid="confirm-decision-btn"
                                     disabled={loading}
                                 >
                                     {loading ? 'Processing...' : `Confirm ${commentModal.action}`}

@@ -91,6 +91,7 @@ export default function Login() {
                             <input
                                 type="text"
                                 className="input-modern"
+                                data-testid="login-username"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 placeholder="e.g. employee1"
@@ -110,6 +111,7 @@ export default function Login() {
                             <input
                                 type="password"
                                 className="input-modern"
+                                data-testid="login-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
@@ -119,7 +121,11 @@ export default function Login() {
                         </div>
                     </div>
 
-                    <button type="submit" className="btn-ui btn-primary" style={{ width: '100%', gap: '0.75rem' }} disabled={loading}>
+                    <button type="submit" 
+                        className="btn-ui btn-primary" 
+                        data-testid="login-submit"
+                        style={{ width: '100%', gap: '0.75rem' }} 
+                        disabled={loading}>
                         {loading ? 'Authenticating...' : (
                             <>
                                 <span>Sign In</span>

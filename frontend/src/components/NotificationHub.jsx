@@ -40,6 +40,7 @@ export default function NotificationHub() {
                 {notifications.map((n) => (
                     <motion.div
                         key={n.id}
+                        data-testid="toast-notification"
                         initial={{ opacity: 0, x: 50, scale: 0.9 }}
                         animate={{ opacity: 1, x: 0, scale: 1 }}
                         exit={{ opacity: 0, x: 20, scale: 0.95 }}

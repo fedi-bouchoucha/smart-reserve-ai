@@ -93,6 +93,7 @@ export default function Layout({ children }) {
                         <NavLink 
                             key={item.to}
                             to={item.to} 
+                            data-testid={`nav-link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                             className={({ isActive }) => `btn-ui ${isActive ? 'btn-primary' : 'btn-ghost'}`}
                             style={{ justifyContent: 'flex-start', width: '100%' }}
                         >
@@ -115,13 +116,14 @@ export default function Layout({ children }) {
                     <button 
                         onClick={handleLogout} 
                         className="btn-ui btn-ghost"
+                        data-testid="logout-button"
                         style={{ width: '100%', justifyContent: 'flex-start', color: 'hsl(var(--destructive))' }}
                     >
                         <LogOut size={18} />
                         <span>Sign Out</span>
                     </button>
 
-                    <div className="card-modern" style={{ padding: '1rem', background: 'hsl(var(--muted) / 0.5)', border: 'none' }}>
+                    <div className="card-modern" data-testid="user-mini-profile" style={{ padding: '1rem', background: 'hsl(var(--muted) / 0.5)', border: 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <div style={{ 
                                 width: '2.5rem', 
