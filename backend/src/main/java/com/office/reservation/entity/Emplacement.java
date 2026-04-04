@@ -17,6 +17,7 @@ public class Emplacement {
     private Integer floor;
 
     @OneToMany(mappedBy = "emplacement", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Chair> chairs;
 
     public Emplacement() {

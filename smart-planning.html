@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPlanning - Employee Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger-color: #ef4444;
+            --danger-bg: #fee2e2;
+            --success-color: #10b981;
+            --success-bg: #d1fae5;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary-color: #3b82f6;
+            --primary-hover: #60a5fa;
+            --danger-color: #f87171;
+            --danger-bg: rgba(239, 68, 68, 0.2);
+            --success-color: #34d399;
+            --success-bg: rgba(16, 185, 129, 0.2);
+            --border-color: #334155;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Nav & Toggle */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: var(--surface-color);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: transform 0.2s;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            cursor: pointer;
+            margin-right: 1rem;
+            display: none;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--border-color);
+        }
+
+        /* Views configuration */
+        .view {
+            display: none;
+            flex: 1;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Landing Page */
+        #landing-view {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--primary-color), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 600px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Login Page */
+        #login-view {
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-card {
+            background-color: var(--surface-color);
+            padding: 3rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            margin-bottom: 2rem;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        /* Dashboard */
+        #dashboard-view {
+            flex-direction: row;
+            padding: 2rem;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            #dashboard-view {
+                flex-direction: column;
+            }
+        }
+
+        .calendar-container {
+            flex: 3;
+            background-color: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            min-height: 600px;
+        }
+
+        .sidebar {
+            flex: 1;
+            background-color: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .employee-info h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .booking-list {
+            list-style: none;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .booking-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .booking-item:last-child {
+            border-bottom: none;
+        }
+
+        .badge-week {
+            font-size: 0.75rem;
+            background-color: var(--bg-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+        }
+
+        /* Fullcalendar overrides */
+        .fc {
+            --fc-page-bg-color: var(--surface-color);
+            --fc-neutral-bg-color: var(--bg-color);
+            --fc-neutral-text-color: var(--text-primary);
+            --fc-border-color: var(--border-color);
+            --fc-button-bg-color: var(--primary-color);
+            --fc-button-border-color: var(--primary-color);
+            --fc-button-hover-bg-color: var(--primary-hover);
+            --fc-button-hover-border-color: var(--primary-hover);
+            --fc-button-active-bg-color: var(--primary-hover);
+            --fc-button-active-border-color: var(--primary-hover);
+            --fc-today-bg-color: var(--bg-color);
+        }
+
+        .fc .fc-daygrid-day.fc-day-today {
+            background-color: rgba(59, 130, 246, 0.05) !important;
+        }
+
+        .fc-event {
+            cursor: pointer;
+            border: none !important;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.85em;
+        }
+
+        .event-unavailable {
+            background-color: var(--danger-bg) !important;
+            color: var(--danger-color) !important;
+        }
+
+        .event-booked {
+            background-color: var(--success-bg) !important;
+            color: var(--success-color) !important;
+        }
+
+        .fc-daygrid-day-frame {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .fc-daygrid-day-frame:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        [data-theme="dark"] .fc-daygrid-day-frame:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal-backdrop.show .modal {
+            transform: scale(1);
+        }
+
+        .modal h3 {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .day-checkboxes {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .day-option {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .day-option:hover:not(.disabled) {
+            background-color: var(--bg-color);
+        }
+
+        .day-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: var(--bg-color);
+        }
+
+        .day-option input {
+            margin-right: 1rem;
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+        }
+
+        .day-option.disabled input {
+            cursor: not-allowed;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .btn-outline {
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-color);
+        }
+
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-submit:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .errorMessage {
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            min-height: 1.2rem;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 200;
+        }
+
+        .toast {
+            background-color: var(--surface-color);
+            color: var(--text-primary);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--primary-color);
+            animation: slideIn 0.3s forwards, fadeOut 0.3s 2.7s forwards;
+            font-weight: 500;
+        }
+
+        .toast.error {
+            border-color: var(--danger-color);
+        }
+
+        .toast.success {
+            border-color: var(--success-color);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">SmartPlanning</div>
+        <div style="display: flex; align-items: center;">
+            <button class="logout-btn" id="logoutBtn" onclick="app.logout()">Logout</button>
+            <button class="theme-toggle" id="themeToggle" onclick="app.toggleTheme()">🌙</button>
+        </div>
+    </nav>
+
+    <!-- Landing View -->
+    <main id="landing-view" class="view active">
+        <h1 class="hero-title">The Future of Hybrid Work</h1>
+        <p class="hero-subtitle">Coordinate your in-office days seamlessly with SmartPlanning. Strict constraints, zero conflicts, and beautiful execution.</p>
+        <button class="btn-primary" onclick="app.navigate('login-view')">Get Started</button>
+    </main>
+
+    <!-- Login View -->
+    <main id="login-view" class="view">
+        <div class="login-card">
+            <h2>Sign In</h2>
+            <select id="employee-select" class="form-select">
+                <option value="" disabled selected>Select your profile</option>
+                <!-- Filled dynamically -->
+            </select>
+            <button class="btn-primary" style="width: 100%" onclick="app.login()">Login</button>
+        </div>
+    </main>
+
+    <!-- Dashboard View -->
+    <main id="dashboard-view" class="view">
+        <div class="calendar-container">
+            <div id="calendar"></div>
+        </div>
+        <aside class="sidebar">
+            <div class="employee-info">
+                <h3>Welcome, <span id="emp-name-display"></span></h3>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Manage your weekly bookings below.</p>
+            </div>
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
+            <h4 style="margin-top: 0.5rem">Your Bookings</h4>
+            <ul class="booking-list" id="booking-list">
+                <!-- Bookings rendered here -->
+            </ul>
+        </aside>
+    </main>
+
+    <!-- Modal for Weekly Booking -->
+    <div class="modal-backdrop" id="bookingModal">
+        <div class="modal">
+            <h3 id="modal-week-title">Book Week X</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Select exactly 2 or 3 days for this week.
+            </p>
+            <div class="day-checkboxes" id="modal-checkboxes">
+                <!-- Rendered dynamically -->
+            </div>
+            <div class="errorMessage" id="modal-error"></div>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="app.closeModal()">Cancel</button>
+                <button class="btn-submit" id="modal-save-btn" onclick="app.saveWeekBookings()">Save Bookings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // Data Structure
+        const db = {
+            employees: [
+                { id: 1, name: "Alice Martin", unavailableDates: ["2026-04-05", "2026-04-12", "2026-04-19"] },
+                { id: 2, name: "Bernard Dubois", unavailableDates: ["2026-04-01", "2026-04-08", "2026-04-15", "2026-04-22", "2026-04-29"] }, // Wednesdays in April 2026
+                { id: 3, name: "Claire Legrand", unavailableDates: ["2026-04-07", "2026-04-14", "2026-04-21", "2026-04-28"] }
+            ],
+            // Get local storage bookings
+            getBookings() {
+                const b = localStorage.getItem('smartPlanningBookings');
+                return b ? JSON.parse(b) : {}; // { empId: { "2026-W14": ["2026-04-06", ... ] } }
+            },
+            saveBookings(data) {
+                localStorage.setItem('smartPlanningBookings', JSON.stringify(data));
+            }
+        };
+
+        // App Logic
+        const app = {
+            currentUser: null,
+            calendar: null,
+            currentWeekData: null, // Holds context when modal is open
+
+            init() {
+                this.initTheme();
+                this.populateLogin();
+
+                // If logged in via session (mock)
+                const savedUser = localStorage.getItem('smartPlanningUser');
+                if (savedUser) {
+                    this.currentUser = db.employees.find(e => e.id == savedUser);
+                    if (this.currentUser) {
+                        this.navigate('dashboard-view');
+                        this.initCalendar();
+                        this.renderSidebar();
+                        document.getElementById('emp-name-display').textContent = this.currentUser.name;
+                        document.getElementById('logoutBtn').style.display = 'block';
+                        return;
+                    }
+                }
+                this.navigate('landing-view');
+            },
+
+            initTheme() {
+                const theme = localStorage.getItem('smartPlanningTheme') || 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                document.getElementById('themeToggle').textContent = theme === 'light' ? '🌙' : '☀️';
+            },
+
+            toggleTheme() {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('smartPlanningTheme', next);
+                document.getElementById('themeToggle').textContent = next === 'light' ? '🌙' : '☀️';
+            },
+
+            navigate(viewId) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+            },
+
+            populateLogin() {
+                const select = document.getElementById('employee-select');
+                db.employees.forEach(emp => {
+                    const opt = document.createElement('option');
+                    opt.value = emp.id;
+                    opt.textContent = emp.name;
+                    select.appendChild(opt);
+                });
+            },
+
+            login() {
+                const select = document.getElementById('employee-select');
+                const id = select.value;
+                if (!id) {
+                    this.showToast('Please select an employee profile', 'error');
+                    return;
+                }
+                
+                this.currentUser = db.employees.find(e => e.id == id);
+                localStorage.setItem('smartPlanningUser', id);
+                
+                document.getElementById('emp-name-display').textContent = this.currentUser.name;
+                document.getElementById('logoutBtn').style.display = 'block';
+                
+                this.navigate('dashboard-view');
+                this.initCalendar();
+                this.renderSidebar();
+                this.showToast(`Welcome, ${this.currentUser.name}`, 'success');
+            },
+
+            logout() {
+                this.currentUser = null;
+                localStorage.removeItem('smartPlanningUser');
+                document.getElementById('logoutBtn').style.display = 'none';
+                if(this.calendar) {
+                    this.calendar.destroy();
+                    this.calendar = null;
+                }
+                this.navigate('login-view');
+            },
+
+            initCalendar() {
+                const calendarEl = document.getElementById('calendar');
+                // Ensure fresh initialization
+                if (this.calendar) this.calendar.destroy();
+
+                this.calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    firstDay: 1, // Monday
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth'
+                    },
+                    height: '100%',
+                    events: this.getCalendarEvents.bind(this),
+                    dateClick: (info) => this.handleDateClick(info.date)
+                });
+                this.calendar.render();
+            },
+
+            getCalendarEvents(info, successCallback, failureCallback) {
+                if (!this.currentUser) return successCallback([]);
+
+                let events = [];
+                const start = new Date(info.start);
+                const end = new Date(info.end);
+
+                // 1. Add Unavailabilities (Red blocks)
+                this.currentUser.unavailableDates.forEach(dateStr => {
+                    const d = new Date(dateStr);
+                    if (d >= start && d <= end) {
+                        events.push({
+                            title: 'Unavailable',
+                            start: dateStr,
+                            allDay: true,
+                            className: 'event-unavailable',
+                            display: 'block'
+                        });
+                    }
+                });
+
+                // 2. Add Bookings (Green blocks)
+                const allBookings = db.getBookings();
+                const myBookingsMap = allBookings[this.currentUser.id] || {};
+                
+                Object.values(myBookingsMap).forEach(weekDates => {
+                    weekDates.forEach(dateStr => {
+                        const d = new Date(dateStr);
+                        if (d >= start && d <= end) {
+                            events.push({
+                                title: 'Booked',
+                                start: dateStr,
+                                allDay: true,
+                                className: 'event-booked',
+                                display: 'block'
+                            });
+                        }
+                    });
+                });
+
+                successCallback(events);
+            },
+
+            handleDateClick(dateObj) {
+                // Ignore weekends for simplicity in standard corporate bookings, 
+                // but requirement says 'Monday to Sunday', so we allow all days inside the week.
+                const dateStr = this.formatDate(dateObj);
+                
+                // Block if strictly unavailable
+                if (this.currentUser.unavailableDates.includes(dateStr)) {
+                    this.showToast('You cannot select an unavailable date', 'error');
+                    return;
+                }
+
+                this.openModalForWeek(dateObj);
+            },
+
+            openModalForWeek(clickedDate) {
+                // Get Monday and Sunday of this date's week
+                const d = new Date(clickedDate);
+                const day = d.getDay();
+                const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday start
+                const monday = new Date(d.setDate(diff));
+                
+                // Generate week span array
+                const weekDays = [];
+                for(let i=0; i<7; i++) {
+                    const temp = new Date(monday);
+                    temp.setDate(monday.getDate() + i);
+                    weekDays.push(temp);
+                }
+
+                // Get ISO Week Number string
+                const weekStr = this.getISOWeekId(monday);
+
+                // Fetch current booking state
+                const allBookings = db.getBookings();
+                const myBookingsMap = allBookings[this.currentUser.id] || {};
+                const currentWeekBookings = myBookingsMap[weekStr] || [];
+
+                this.currentWeekData = {
+                    weekStr,
+                    weekDays,
+                    currentBookings: [...currentWeekBookings]
+                };
+
+                this.renderModal();
+                document.getElementById('bookingModal').classList.add('show');
+            },
+
+            renderModal() {
+                const data = this.currentWeekData;
+                document.getElementById('modal-week-title').textContent = `Bookings for Week ${data.weekStr.split('-W')[1]}`;
+                const container = document.getElementById('modal-checkboxes');
+                container.innerHTML = '';
+                document.getElementById('modal-error').textContent = '';
+
+                data.weekDays.forEach((dateObj, index) => {
+                    const dateStr = this.formatDate(dateObj);
+                    const isUnavailable = this.currentUser.unavailableDates.includes(dateStr);
+                    const isBooked = data.currentBookings.includes(dateStr);
+
+                    const label = document.createElement('label');
+                    label.className = `day-option ${isUnavailable ? 'disabled' : ''}`;
+                    
+                    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+                    label.innerHTML = `
+                        <input type="checkbox" value="${dateStr}" 
+                            ${isBooked ? 'checked' : ''} 
+                            ${isUnavailable ? 'disabled' : ''}
+                            onchange="app.handleCheckboxChange(this)">
+                        <div>
+                            <strong>${dayNames[dateObj.getDay()]}</strong> - ${dateObj.toLocaleDateString()}
+                            ${isUnavailable ? '<span style="color:var(--danger-color); font-size:0.8em; margin-left:8px;">Unavailable</span>' : ''}
+                        </div>
+                    `;
+                    container.appendChild(label);
+                });
+            },
+
+            handleCheckboxChange(checkbox) {
+                // Interactive validation simulation
+                const checkboxes = Array.from(document.querySelectorAll('#modal-checkboxes input[type="checkbox"]:checked'));
+                const count = checkboxes.length;
+                const errEl = document.getElementById('modal-error');
+                
+                if (count > 3) {
+                    checkbox.checked = false; // Undo
+                    errEl.textContent = "Maximum 3 days allowed per week";
+                    return;
+                }
+                
+                // DELETION LOGIC (Requirement #5)
+                // If they originally had 2 bookings globally stored, and they uncheck bringing it to 1
+                const origCount = this.currentWeekData.currentBookings.length;
+                
+                // We only do hard block if origCount was 2 and they try to go to 1.
+                // Wait, they can select and submit. Let's do validation on save, 
+                // but for UX we can show a warning dynamically.
+                errEl.textContent = "";
+            },
+
+            saveWeekBookings() {
+                const checkboxes = Array.from(document.querySelectorAll('#modal-checkboxes input[type="checkbox"]:checked'));
+                const selectedDates = checkboxes.map(cb => cb.value);
+                const count = selectedDates.length;
+                const errEl = document.getElementById('modal-error');
+
+                const origCount = this.currentWeekData.currentBookings.length;
+
+                // Requirement #4 & #5 validation
+                if (count !== 2 && count !== 3 && count !== 0) {
+                    // Allow 0? If they have 0 currently, they must pick 2 or 3.
+                    // If they want to erase completely (count 0), is it allowed? Requirement says "Forced 2 or 3 days".
+                    // Let's assume to have a booking week, they need 2 or 3.
+                    errEl.textContent = "You must select exactly 2 or 3 days.";
+                    return;
+                }
+
+                // Deletion rule: "CANNOT delete individual booking if they only have 2 days" -> meaning from 2 to 1.
+                // If they go from 2 to 0, that's deleting all. Requirement says "delete an individual booking".
+                // We'll enforce: Week must contain 2 or 3 days. 
+                // Going from 3 to 2 is fine. Going from 2 to 3 is fine.
+                // Going from 2 to anything else except 3 is blocked (unless 0 if complete cancel allowed? We'll allow 0 as complete week cancel).
+                if (origCount === 2 && count < 2 && count > 0) {
+                    errEl.textContent = "Constraint: You must book 3 days before you can delete an individual one. Cannot reduce to 1.";
+                    return;
+                }
+
+                // Passed logic. Save.
+                const allBookings = db.getBookings();
+                if (!allBookings[this.currentUser.id]) allBookings[this.currentUser.id] = {};
+                
+                if (count === 0) {
+                    delete allBookings[this.currentUser.id][this.currentWeekData.weekStr];
+                } else {
+                    allBookings[this.currentUser.id][this.currentWeekData.weekStr] = selectedDates;
+                }
+
+                db.saveBookings(allBookings);
+                
+                this.closeModal();
+                this.calendar.refetchEvents();
+                this.renderSidebar();
+                this.showToast('Bookings successfully updated!', 'success');
+            },
+
+            closeModal() {
+                document.getElementById('bookingModal').classList.remove('show');
+                this.currentWeekData = null;
+            },
+
+            renderSidebar() {
+                const allBookings = db.getBookings();
+                const myBookingsMap = allBookings[this.currentUser.id] || {};
+                const list = document.getElementById('booking-list');
+                list.innerHTML = '';
+
+                const sortedWeeks = Object.keys(myBookingsMap).sort();
+
+                if (sortedWeeks.length === 0) {
+                    list.innerHTML = '<li style="color:var(--text-secondary); font-size:0.9rem; text-align:center; padding: 2rem 0;">No bookings yet. Click a date on the calendar.</li>';
+                    return;
+                }
+
+                sortedWeeks.forEach(week => {
+                    const days = myBookingsMap[week].sort();
+                    const li = document.createElement('li');
+                    li.className = 'booking-item';
+                    
+                    let dayStr = '';
+                    days.forEach(d => {
+                        const dateObj = new Date(d);
+                        dayStr += dateObj.toLocaleDateString(undefined, { weekday: 'short', month: 'numeric', day: 'numeric'}) + '<br>';
+                    });
+
+                    li.innerHTML = `
+                        <div style="font-size: 0.9rem; line-height: 1.4;">${dayStr}</div>
+                        <span class="badge-week">Week ${week.split('-W')[1]}</span>
+                    `;
+                    list.appendChild(li);
+                });
+            },
+
+            showToast(message, type = 'success') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    if (toast.parentElement) toast.remove();
+                }, 3000);
+            },
+
+            // Utility Functions
+            formatDate(dateObj) {
+                const yyyy = dateObj.getFullYear();
+                const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const dd = String(dateObj.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            },
+
+            getISOWeekId(dateObj) {
+                // Returns string like "2026-W14"
+                const date = new Date(dateObj.getTime());
+                date.setHours(0, 0, 0, 0);
+                // Thursday in current week decides the year.
+                date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+                // January 4 is always in week 1.
+                const week1 = new Date(date.getFullYear(), 0, 4);
+                // Adjust to Thursday in week 1 and count number of weeks from date to week1.
+                const week = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+                return `${date.getFullYear()}-W${String(week).padStart(2, '0')}`;
+            }
+        };
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
+    </script>
+</body>
+</html>

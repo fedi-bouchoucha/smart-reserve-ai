@@ -9,6 +9,8 @@ import AdminAnalyticsDashboard from './pages/AdminAnalyticsDashboard';
 import Profile from './pages/Profile';
 import Layout from './components/Layout';
 
+import LandingPage from './pages/LandingPage';
+
 function ProtectedRoute({ children, roles }) {
     const { user, loading } = useAuth();
     if (loading) return <div className="loading"><div className="spinner"></div>Loading...</div>;
@@ -19,7 +21,7 @@ function ProtectedRoute({ children, roles }) {
 
 function HomeRedirect() {
     const { user } = useAuth();
-    if (!user) return <Navigate to="/login" />;
+    if (!user) return <LandingPage />;
     switch (user.role) {
         case 'ADMIN': return <Navigate to="/admin" />;
         case 'MANAGER': return <Navigate to="/manager" />;
@@ -36,12 +38,12 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     <Route path="/" element={<HomeRedirect />} />
                     <Route path="/employee" element={
-                        <ProtectedRoute roles={['EMPLOYEE', 'MANAGER', 'ADMIN']}>
+                        <ProtectedRoute roles={['EMPLOYEE']}>
                             <Layout><EmployeeDashboard /></Layout>
                         </ProtectedRoute>
                     } />
                     <Route path="/manager" element={
-                        <ProtectedRoute roles={['MANAGER', 'ADMIN']}>
+                        <ProtectedRoute roles={['MANAGER']}>
                             <Layout><ManagerDashboard /></Layout>
                         </ProtectedRoute>
                     } />

@@ -29,8 +29,13 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (userRepository.count() > 0)
-            return;
+        initializeUsers();
+        initializeWorkspace();
+        initializeRooms();
+    }
+
+    private void initializeUsers() {
+        if (userRepository.count() > 0) return;
 
         // Create Admin
         User admin = userRepository.save(User.builder()
@@ -75,12 +80,19 @@ public class DataInitializer implements CommandLineRunner {
                     .manager(manager)
                     .build());
         }
+    }
 
-        // Create 80 emplacements with 4 chairs each
+    private void initializeWorkspace() {
+        // Ensure exactly 80 emplacements numbered E01 to E80
         for (int i = 1; i <= 80; i++) {
+            String name = "E" + String.format("%02d", i);
+            if (emplacementRepository.findByName(name).isPresent()) {
+                continue;
+            }
+
             int floor = (i - 1) / 20 + 1; // Floors 1-4, 20 emplacements each
             Emplacement emp = emplacementRepository.save(Emplacement.builder()
-                    .name("E" + String.format("%02d", i))
+                    .name(name)
                     .floor(floor)
                     .build());
 
@@ -91,25 +103,19 @@ public class DataInitializer implements CommandLineRunner {
                         .build());
             }
         }
+        
+        System.out.println("=== Workspace Initialization Sync (80 Tables / 320 Chairs) ===");
+    }
 
-        // Create Meeting Rooms
-        String[] roomNames = { "Salle Conférence A", "Salle Conférence B", "Salle Réunion 1",
-                "Salle Réunion 2", "Salle Brainstorm", "Salle Direction" };
-        int[] capacities = { 20, 20, 10, 10, 8, 6 };
-        int[] floors = { 1, 2, 1, 2, 3, 4 };
+    private void initializeRooms() {
+        if (meetingRoomRepository.count() > 0) return;
 
-        for (int i = 0; i < roomNames.length; i++) {
-            meetingRoomRepository.save(MeetingRoom.builder()
-                    .name(roomNames[i])
-                    .capacity(capacities[i])
-                    .floor(floors[i])
-                    .build());
-        }
+        meetingRoomRepository.save(MeetingRoom.builder()
+                .name("Meeting Room")
+                .capacity(10)
+                .floor(1)
+                .build());
 
-        System.out.println("=== Data Initialized ===");
-        System.out.println("Admin: admin / admin123");
-        System.out.println("Manager: manager1 / manager123, manager2 / manager123");
-        System.out.println("Employees: employee1-10 / emp123");
-        System.out.println("80 Emplacements, 320 Chairs, 6 Meeting Rooms");
+        System.out.println("=== Room Initialized (Meeting Room) ===");
     }
 }

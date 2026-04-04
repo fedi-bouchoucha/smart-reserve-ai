@@ -31,6 +31,7 @@ public class User {
     private User manager;
 
     @OneToMany(mappedBy = "manager", fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<User> employees;
 
     public User() {

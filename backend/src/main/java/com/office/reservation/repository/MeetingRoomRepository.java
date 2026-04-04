@@ -17,4 +17,6 @@ public interface MeetingRoomRepository extends JpaRepository<MeetingRoom, Long> 
     List<MeetingRoom> findAvailableRooms(@Param("date") LocalDate date, 
                                         @Param("startTime") LocalTime startTime, 
                                         @Param("endTime") LocalTime endTime);
+
+    java.util.Optional<MeetingRoom> findByName(String name);
 }

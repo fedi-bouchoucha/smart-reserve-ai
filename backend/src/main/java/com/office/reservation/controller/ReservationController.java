@@ -1,6 +1,7 @@
 package com.office.reservation.controller;
 
 import com.office.reservation.dto.BulkReservationRequest;
+import com.office.reservation.dto.CalendarStatusDTO;
 import com.office.reservation.dto.ReservationRequest;
 import com.office.reservation.dto.ReservationResponse;
 import com.office.reservation.entity.User;
@@ -81,6 +82,7 @@ public class ReservationController {
     }
 
     @GetMapping("/my")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<List<ReservationResponse>> getMyReservations(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -88,6 +90,7 @@ public class ReservationController {
     }
 
     @GetMapping("/my/weekly-counts")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Map<String, Integer>> getWeeklyCounts(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -95,6 +98,7 @@ public class ReservationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<?> deleteReservation(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
         try {
             User user = userRepository.findByUsername(userDetails.getUsername())
@@ -123,6 +127,17 @@ public class ReservationController {
     @GetMapping("/available/rooms/{date}")
     public ResponseEntity<List<Object>> getAvailableRooms(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok(reservationService.getAvailableRooms(date));
+    }
+
+    @GetMapping("/calendar-status")
+    public ResponseEntity<List<CalendarStatusDTO>> getCalendarStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam int year, @RequestParam int month,
+            @RequestParam(required = false) Long resourceId,
+            @RequestParam(required = false) String resourceType) {
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(reservationService.getCalendarAvailability(year, month, resourceId, resourceType, user.getId()));
     }
 
     @GetMapping("/smart-schedule")

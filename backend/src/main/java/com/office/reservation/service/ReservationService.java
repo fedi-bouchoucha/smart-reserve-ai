@@ -1,6 +1,7 @@
 package com.office.reservation.service;
 
 import com.office.reservation.dto.BulkReservationRequest;
+import com.office.reservation.dto.CalendarStatusDTO;
 import com.office.reservation.dto.ReservationRequest;
 import com.office.reservation.dto.ReservationResponse;
 import com.office.reservation.entity.Reservation;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,31 +51,12 @@ public class ReservationService {
         LocalTime start = request.getStartTime() != null ? request.getStartTime() : LocalTime.of(9, 0);
         LocalTime end = request.getEndTime() != null ? request.getEndTime() : LocalTime.of(17, 0);
 
-        // Rule 1: Window check for Chairs (20th - 28th of current month)
-        if (request.getChairId() != null) {
-            int today = LocalDate.now().getDayOfMonth();
-            if (today < 20 || today > 28) {
-                throw new RuntimeException("Chair reservations can only be made between the 20th and 28th of the month.");
-            }
-        }
-
-        // Rule 2: Weekday only
+        // Standard checks...
         if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
             throw new RuntimeException("Cannot reserve on weekends.");
         }
-
-        // Rule 3: One resource per day for the user
         if (reservationRepository.existsByUserIdAndDateAndStatus(userId, date, ReservationStatus.CONFIRMED)) {
             throw new RuntimeException("You already have a confirmed reservation for this date.");
-        }
-
-        // Rule 4: Weekly limit (min 2, max 3)
-        LocalDate weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        LocalDate weekEnd = weekStart.plusDays(4);
-        long currentWeekCount = reservationRepository.countByUserIdAndDateBetweenAndStatus(userId, weekStart, weekEnd, ReservationStatus.CONFIRMED);
-        
-        if (currentWeekCount >= 3) {
-            throw new RuntimeException("Maximum 3 reservations per week reached.");
         }
 
         // Rule 5: Capacity limit (20%)
@@ -83,23 +66,6 @@ public class ReservationService {
             throw new RuntimeException("Office capacity reached (20% limit).");
         }
 
-        // Rule 6: WFH Rotation (Mon/Fri mandatory if WFH last week)
-        LocalDate prevMonday = weekStart.minusWeeks(1);
-        LocalDate prevFriday = prevMonday.plusDays(4);
-        List<Reservation> prevWeekRes = reservationRepository.findConfirmedByUserAndWeek(userId, prevMonday, prevFriday);
-        
-        if (prevWeekRes.isEmpty()) { 
-            boolean isMonOrFri = date.equals(weekStart) || date.equals(weekEnd);
-            if (!isMonOrFri) {
-                 boolean hasMon = reservationRepository.existsByUserIdAndDateAndStatus(userId, weekStart, ReservationStatus.CONFIRMED);
-                 boolean hasFri = reservationRepository.existsByUserIdAndDateAndStatus(userId, weekEnd, ReservationStatus.CONFIRMED);
-                 if (!hasMon || !hasFri) {
-                     throw new RuntimeException("Mandatory Office Presence: You must reserve both Monday and Friday this week.");
-                 }
-            }
-        }
-
-        // Rule 7: Specific Resource Availability
         validateAvailability(request, start, end);
 
         Reservation res = Reservation.builder()
@@ -117,12 +83,48 @@ public class ReservationService {
 
     @Transactional
     public List<ReservationResponse> createBulkReservations(Long userId, BulkReservationRequest request) {
+        validateWeeklyLimits(userId, request.getDates(), true);
+
         List<ReservationResponse> responses = new ArrayList<>();
         for (LocalDate date : request.getDates()) {
             ReservationRequest req = new ReservationRequest(request.getChairId(), request.getMeetingRoomId(), date, request.getStartTime(), request.getEndTime());
             responses.add(createReservation(userId, req));
         }
         return responses;
+    }
+
+    private void validateWeeklyLimits(Long userId, List<LocalDate> targetDates, boolean isAdding) {
+        // Group new dates by their week-starting Monday
+        Map<LocalDate, List<LocalDate>> datesByWeek = targetDates.stream()
+                .distinct()
+                .collect(Collectors.groupingBy(d -> d.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))));
+
+        for (Map.Entry<LocalDate, List<LocalDate>> entry : datesByWeek.entrySet()) {
+            LocalDate weekStart = entry.getKey();
+            LocalDate weekEnd = weekStart.plusDays(4);
+            
+            // Current confirmed reservations in the database for this week
+            List<LocalDate> existingDates = reservationRepository.findConfirmedByUserAndWeek(userId, weekStart, weekEnd)
+                    .stream().map(Reservation::getDate).toList();
+
+            long finalCount;
+            if (isAdding) {
+                // Combine existing and new, ensuring uniqueness
+                java.util.Set<LocalDate> combined = new java.util.HashSet<>(existingDates);
+                combined.addAll(entry.getValue());
+                finalCount = combined.size();
+            } else {
+                // Subtract the ones being deleted from the existing list
+                finalCount = existingDates.size() - entry.getValue().size();
+            }
+
+            if (finalCount > 0 && (finalCount < 2 || finalCount > 3)) {
+                String weekRange = weekStart + " to " + weekEnd;
+                throw new RuntimeException("Weekly Rule Violation: You must have exactly 2 or 3 days booked PER WEEK. " +
+                        "Your current selection for the week (" + weekRange + ") results in " + finalCount + " day(s). " +
+                        "Please select another day or remove one to meet the 2-3 day requirement.");
+            }
+        }
     }
 
     private void validateAvailability(ReservationRequest req, LocalTime start, LocalTime end) {
@@ -146,9 +148,21 @@ public class ReservationService {
         return reservationRepository.findAll().stream().map(this::mapToResponse).toList();
     }
 
+    @Transactional
     public void deleteReservation(Long userId, Long reservationId) {
         Reservation res = reservationRepository.findById(reservationId).orElseThrow();
         if (!res.getUser().getId().equals(userId)) throw new RuntimeException("Unauthorized");
+        
+        LocalDate weekStart = res.getDate().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate weekEnd = weekStart.plusDays(4);
+        long count = reservationRepository.countByUserIdAndDateBetweenAndStatus(userId, weekStart, weekEnd, ReservationStatus.CONFIRMED);
+        
+        System.out.println("Delete Attempt: User " + userId + ", Week " + weekStart + " to " + weekEnd + ", Current Count: " + count);
+        
+        if (count < 3) {
+            throw new RuntimeException("Cancellation restricted: You must have 3 booked days for this week to be allowed to cancel one (leaving you with 2). If you need to clear your whole week, contact your manager.");
+        }
+        
         reservationRepository.delete(res);
     }
 
@@ -172,6 +186,38 @@ public class ReservationService {
 
     public List<Object> getAvailableRooms(LocalDate date) {
         return meetingRoomRepository.findAvailableRooms(date, LocalTime.of(9,0), LocalTime.of(17,0)).stream().collect(Collectors.toList());
+    }
+
+    public List<CalendarStatusDTO> getCalendarAvailability(int year, int month, Long resourceId, String resourceType, Long userId) {
+        YearMonth ym = YearMonth.of(year, month);
+        List<CalendarStatusDTO> out = new ArrayList<>();
+        long totalStaff = userRepository.countByRole(Role.EMPLOYEE);
+        LocalTime s = LocalTime.of(9,0), e = LocalTime.of(17,0);
+        for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
+            long occ = reservationRepository.countByDateAndStatus(d, ReservationStatus.CONFIRMED);
+            double percentage = totalStaff > 0 ? (double)occ / totalStaff : 0;
+            double percentageWithBooking = totalStaff > 0 ? (double)(occ+1)/totalStaff : 0;
+
+            if (d.getDayOfWeek() == DayOfWeek.SATURDAY || d.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Office closed (weekend)", percentage)); continue;
+            }
+            if (reservationRepository.existsByUserIdAndDateAndStatus(userId, d, ReservationStatus.CONFIRMED)) {
+                out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "You already have a booking for this day.", percentage)); continue;
+            }
+            if (percentageWithBooking > 0.20) {
+                out.add(new CalendarStatusDTO(d, false, "CAPACITY_REACHED", "Office capacity reached (20% of employees).", percentage)); continue;
+            }
+            if (resourceId != null && resourceType != null) {
+                boolean taken = resourceType.equalsIgnoreCase("chair")
+                    ? reservationRepository.existsOverlappingChairReservation(resourceId, d, s, e)
+                    : reservationRepository.existsOverlappingRoomReservation(resourceId, d, s, e);
+                if (taken) {
+                    out.add(new CalendarStatusDTO(d, false, "BOOKED", resourceType.equalsIgnoreCase("chair") ? "This desk is already booked." : "Meeting room already fully booked.", percentage)); continue;
+                }
+            }
+            out.add(new CalendarStatusDTO(d, true, "AVAILABLE", "Available", percentage));
+        }
+        return out;
     }
 
     private ReservationResponse mapToResponse(Reservation r) {
