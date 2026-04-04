@@ -65,18 +65,6 @@ Before starting, ensure you have the following installed on your machine:
 - **PostgreSQL (v13+)**
 
 ---
-
-## 🔐 Environment Variables
-
-You need to establish the exact environment connection. Ensure your PostgreSQL instance matches the variables injected by Spring. If using standard `.env` or `application.properties`, configure:
-
-**(Backend `application.properties`)**
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/smart_office_db
-spring.datasource.username=smart_user
-spring.datasource.password=trytoguessit12345
-```
-
 ---
 
 ## 🚀 Installation & Setup
