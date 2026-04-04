@@ -2,7 +2,9 @@ package com.office.reservation.service;
 
 import com.office.reservation.dto.ChangeRequestDTO;
 import com.office.reservation.entity.*;
+import com.office.reservation.event.ReservationStatusChangedEvent;
 import com.office.reservation.repository.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +22,20 @@ public class ChangeRequestService {
     private final ChairRepository chairRepository;
     private final MeetingRoomRepository meetingRoomRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ChangeRequestService(ChangeRequestRepository changeRequestRepository,
             ReservationRepository reservationRepository,
             ChairRepository chairRepository,
             MeetingRoomRepository meetingRoomRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ApplicationEventPublisher eventPublisher) {
         this.changeRequestRepository = changeRequestRepository;
         this.reservationRepository = reservationRepository;
         this.chairRepository = chairRepository;
         this.meetingRoomRepository = meetingRoomRepository;
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -104,6 +109,18 @@ public class ChangeRequestService {
         }
         reservationRepository.save(reservation);
         ChangeRequest saved = changeRequestRepository.save(cr);
+
+        // Notify user
+        eventPublisher.publishEvent(new ReservationStatusChangedEvent(
+            this, 
+            cr.getRequestedBy(), 
+            reservation.getId(), 
+            reservation.getChair() != null ? "Chair " + reservation.getChair().getNumber() : "Room " + reservation.getMeetingRoom().getName(), 
+            reservation.getDate(), 
+            "APPROVED", 
+            comment
+        ));
+
         return mapToResponse(saved);
     }
 
@@ -114,6 +131,18 @@ public class ChangeRequestService {
         cr.setStatus(ChangeRequestStatus.REJECTED);
         cr.setManagerComment(comment);
         ChangeRequest saved = changeRequestRepository.save(cr);
+
+        // Notify user
+        eventPublisher.publishEvent(new ReservationStatusChangedEvent(
+            this, 
+            cr.getRequestedBy(), 
+            cr.getReservation().getId(), 
+            cr.getReservation().getChair() != null ? "Chair " + cr.getReservation().getChair().getNumber() : "Room " + cr.getReservation().getMeetingRoom().getName(), 
+            cr.getReservation().getDate(), 
+            "REJECTED", 
+            comment
+        ));
+
         return mapToResponse(saved);
     }
 

@@ -66,18 +66,6 @@ Before starting, ensure you have the following installed on your machine:
 
 ---
 
-## 🔐 Environment Variables
-
-You need to establish the exact environment connection. Ensure your PostgreSQL instance matches the variables injected by Spring. If using standard `.env` or `application.properties`, configure:
-
-**(Backend `application.properties`)**
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/smart_office_db
-spring.datasource.username=smart_user
-spring.datasource.password=trytoguessit12345
-```
-
----
 
 ## 🚀 Installation & Setup
 
@@ -137,7 +125,6 @@ With the backend active, visit the interactive Swagger UI panel:
 ## 🚀 Future Improvements Roadmap
 
 - [ ] Interactive structural office map allowing spatial desk-clicking reservations.
-- [ ] Email/Push notifications advising users of approved/cancelled reservations.
 - [ ] Implement Redis server caching to offload intense analytical operations.
 - [ ] Advanced end-to-end (E2E) testing routines (e.g., Cypress/Playwright).
 

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import NotificationHub from './NotificationHub';
 
 export default function Layout({ children }) {
     const { user, logout } = useAuth();
@@ -164,6 +165,7 @@ export default function Layout({ children }) {
                     {children}
                 </motion.div>
             </main>
+            <NotificationHub />
         </div>
     );
 }

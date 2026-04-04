@@ -8,8 +8,10 @@ import com.office.reservation.entity.Reservation;
 import com.office.reservation.entity.ReservationStatus;
 import com.office.reservation.entity.Role;
 import com.office.reservation.entity.User;
+import com.office.reservation.event.ReservationStatusChangedEvent;
 import com.office.reservation.exception.ReservationConflictException;
 import com.office.reservation.repository.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,17 +33,20 @@ public class ReservationService {
     private final MeetingRoomRepository meetingRoomRepository;
     private final UserRepository userRepository;
     private final ConflictResolver conflictResolver;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ReservationService(ReservationRepository reservationRepository,
                               ChairRepository chairRepository,
                               MeetingRoomRepository meetingRoomRepository,
                               UserRepository userRepository,
-                              ConflictResolver conflictResolver) {
+                              ConflictResolver conflictResolver,
+                              ApplicationEventPublisher eventPublisher) {
         this.reservationRepository = reservationRepository;
         this.chairRepository = chairRepository;
         this.meetingRoomRepository = meetingRoomRepository;
         this.userRepository = userRepository;
         this.conflictResolver = conflictResolver;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -164,6 +169,17 @@ public class ReservationService {
         }
         
         reservationRepository.delete(res);
+
+        // Notify user about cancellation
+        eventPublisher.publishEvent(new ReservationStatusChangedEvent(
+            this, 
+            res.getUser(), 
+            res.getId(), 
+            res.getChair() != null ? "Chair " + res.getChair().getNumber() : "Room " + res.getMeetingRoom().getName(), 
+            res.getDate(), 
+            "CANCELLED", 
+            "User cancelled the reservation"
+        ));
     }
 
     public Map<String, Integer> getUserWeeklyReservationCounts(Long userId) {
