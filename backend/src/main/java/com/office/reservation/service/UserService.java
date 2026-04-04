@@ -100,11 +100,12 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse updateProfile(Long id, String fullName, String email) {
+    public UserResponse updateProfile(Long id, String fullName, String email, String profilePicture) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setFullName(fullName);
         user.setEmail(email);
+        user.setProfilePicture(profilePicture);
         return mapToResponse(userRepository.save(user));
     }
 
@@ -122,6 +123,7 @@ public class UserService {
                 .username(user.getUsername())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
+                .profilePicture(user.getProfilePicture())
                 .role(user.getRole().name())
                 .managerId(user.getManager() != null ? user.getManager().getId() : null)
                 .managerName(user.getManager() != null ? user.getManager().getFullName() : null)

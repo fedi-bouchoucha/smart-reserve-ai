@@ -22,6 +22,9 @@ public class User {
 
     private String email;
 
+    @Column(columnDefinition = "TEXT")
+    private String profilePicture;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -37,12 +40,13 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String username, String password, String fullName, String email, Role role, User manager) {
+    public User(Long id, String username, String password, String fullName, String email, String profilePicture, Role role, User manager) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.fullName = fullName;
         this.email = email;
+        this.profilePicture = profilePicture;
         this.role = role;
         this.manager = manager;
     }
@@ -88,6 +92,14 @@ public class User {
         this.email = email;
     }
 
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
     public Role getRole() {
         return role;
     }
@@ -123,6 +135,7 @@ public class User {
         private String password;
         private String fullName;
         private String email;
+        private String profilePicture;
         private Role role;
         private User manager;
 
@@ -151,6 +164,11 @@ public class User {
             return this;
         }
 
+        public UserBuilder profilePicture(String profilePicture) {
+            this.profilePicture = profilePicture;
+            return this;
+        }
+
         public UserBuilder role(Role role) {
             this.role = role;
             return this;
@@ -162,7 +180,7 @@ public class User {
         }
 
         public User build() {
-            return new User(id, username, password, fullName, email, role, manager);
+            return new User(id, username, password, fullName, email, profilePicture, role, manager);
         }
     }
 }

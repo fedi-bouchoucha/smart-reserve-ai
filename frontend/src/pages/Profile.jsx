@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { 
@@ -9,7 +9,8 @@ import {
   Save, 
   Key,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Camera
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,8 +19,10 @@ export default function Profile() {
     const [form, setForm] = useState({
         fullName: '',
         email: '',
-        username: ''
+        username: '',
+        profilePicture: ''
     });
+    const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -35,10 +38,22 @@ export default function Profile() {
             setForm({
                 fullName: user.fullName || '',
                 email: user.email || '',
-                username: user.username || ''
+                username: user.username || '',
+                profilePicture: user.profilePicture || ''
             });
         }
     }, [user]);
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setForm({ ...form, profilePicture: reader.result });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -47,9 +62,10 @@ export default function Profile() {
         try {
             const res = await api.put('/auth/profile', {
                 fullName: form.fullName,
-                email: form.email
+                email: form.email,
+                profilePicture: form.profilePicture
             });
-            const updatedUser = { ...user, fullName: res.data.fullName, email: res.data.email };
+            const updatedUser = { ...user, fullName: res.data.fullName, email: res.data.email, profilePicture: res.data.profilePicture };
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
@@ -94,20 +110,55 @@ export default function Profile() {
 
             {/* Avatar & Identity Header */}
             <div className="card-modern" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <div style={{ 
-                    width: '4.5rem', 
-                    height: '4.5rem', 
-                    borderRadius: '999px', 
-                    background: 'hsl(var(--primary) / 0.1)',
-                    color: 'hsl(var(--primary))',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: '1.5rem',
-                    flexShrink: 0
-                }}>
-                    {user?.fullName?.charAt(0)?.toUpperCase()}
+                <div style={{ position: 'relative' }}>
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        style={{ display: 'none' }} 
+                    />
+                    <div 
+                        onClick={() => fileInputRef.current.click()}
+                        style={{ 
+                            width: '4.5rem', 
+                            height: '4.5rem', 
+                            borderRadius: '999px', 
+                            background: form.profilePicture ? 'transparent' : 'hsl(var(--primary) / 0.1)',
+                            color: 'hsl(var(--primary))',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '1.5rem',
+                            flexShrink: 0,
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            position: 'relative'
+                        }}
+                    >
+                        {form.profilePicture ? (
+                            <img src={form.profilePicture} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                            user?.fullName?.charAt(0)?.toUpperCase()
+                        )}
+                        <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.4)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0,
+                            transition: 'opacity 0.2s',
+                            color: 'white'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = 0}
+                        >
+                            <Camera size={24} />
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem' }}>{user?.fullName}</h2>

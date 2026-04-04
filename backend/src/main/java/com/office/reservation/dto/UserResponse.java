@@ -5,6 +5,7 @@ public class UserResponse {
     private String username;
     private String fullName;
     private String email;
+    private String profilePicture;
     private String role;
     private Long managerId;
     private String managerName;
@@ -12,12 +13,13 @@ public class UserResponse {
     public UserResponse() {
     }
 
-    public UserResponse(Long id, String username, String fullName, String email, String role, Long managerId,
+    public UserResponse(Long id, String username, String fullName, String email, String profilePicture, String role, Long managerId,
             String managerName) {
         this.id = id;
         this.username = username;
         this.fullName = fullName;
         this.email = email;
+        this.profilePicture = profilePicture;
         this.role = role;
         this.managerId = managerId;
         this.managerName = managerName;
@@ -55,6 +57,14 @@ public class UserResponse {
         this.email = email;
     }
 
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
     public String getRole() {
         return role;
     }
@@ -88,6 +98,7 @@ public class UserResponse {
         private String username;
         private String fullName;
         private String email;
+        private String profilePicture;
         private String role;
         private Long managerId;
         private String managerName;
@@ -112,6 +123,11 @@ public class UserResponse {
             return this;
         }
 
+        public UserResponseBuilder profilePicture(String profilePicture) {
+            this.profilePicture = profilePicture;
+            return this;
+        }
+
         public UserResponseBuilder role(String role) {
             this.role = role;
             return this;
@@ -128,7 +144,7 @@ public class UserResponse {
         }
 
         public UserResponse build() {
-            return new UserResponse(id, username, fullName, email, role, managerId, managerName);
+            return new UserResponse(id, username, fullName, email, profilePicture, role, managerId, managerName);
         }
     }
 }

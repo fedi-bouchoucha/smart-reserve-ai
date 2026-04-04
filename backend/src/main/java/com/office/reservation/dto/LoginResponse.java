@@ -4,16 +4,18 @@ public class LoginResponse {
     private String token;
     private String username;
     private String fullName;
+    private String profilePicture;
     private String role;
     private Long userId;
 
     public LoginResponse() {
     }
 
-    public LoginResponse(String token, String username, String fullName, String role, Long userId) {
+    public LoginResponse(String token, String username, String fullName, String profilePicture, String role, Long userId) {
         this.token = token;
         this.username = username;
         this.fullName = fullName;
+        this.profilePicture = profilePicture;
         this.role = role;
         this.userId = userId;
     }
@@ -42,6 +44,14 @@ public class LoginResponse {
         this.fullName = fullName;
     }
 
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
     public String getRole() {
         return role;
     }
@@ -66,6 +76,7 @@ public class LoginResponse {
         private String token;
         private String username;
         private String fullName;
+        private String profilePicture;
         private String role;
         private Long userId;
 
@@ -84,6 +95,11 @@ public class LoginResponse {
             return this;
         }
 
+        public LoginResponseBuilder profilePicture(String profilePicture) {
+            this.profilePicture = profilePicture;
+            return this;
+        }
+
         public LoginResponseBuilder role(String role) {
             this.role = role;
             return this;
@@ -95,7 +111,7 @@ public class LoginResponse {
         }
 
         public LoginResponse build() {
-            return new LoginResponse(token, username, fullName, role, userId);
+            return new LoginResponse(token, username, fullName, profilePicture, role, userId);
         }
     }
 }

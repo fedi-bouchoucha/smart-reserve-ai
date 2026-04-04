@@ -126,15 +126,21 @@ export default function Layout({ children }) {
                                 width: '2.5rem', 
                                 height: '2.5rem', 
                                 borderRadius: '999px', 
-                                background: 'hsl(var(--primary) / 0.1)',
+                                background: user?.profilePicture ? 'transparent' : 'hsl(var(--primary) / 0.1)',
                                 color: 'hsl(var(--primary))',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontWeight: 600,
-                                fontSize: '0.875rem'
+                                fontSize: '0.875rem',
+                                overflow: 'hidden',
+                                flexShrink: 0
                             }}>
-                                {user?.fullName?.charAt(0)}
+                                {user?.profilePicture ? (
+                                    <img src={user.profilePicture} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    user?.fullName?.charAt(0)?.toUpperCase()
+                                )}
                             </div>
                             <div style={{ overflow: 'hidden' }}>
                                 <div style={{ fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
