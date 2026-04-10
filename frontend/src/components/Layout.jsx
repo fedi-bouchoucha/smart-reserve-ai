@@ -10,7 +10,8 @@ import {
   Sun, 
   Moon,
   ChevronRight,
-  PieChart
+  PieChart,
+  Building2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,6 +43,12 @@ export default function Layout({ children }) {
             to: "/employee", 
             label: "My Reservations", 
             icon: Calendar, 
+            roles: ['EMPLOYEE'] 
+        },
+        { 
+            to: "/meeting-rooms", 
+            label: "Meeting Rooms", 
+            icon: Building2, 
             roles: ['EMPLOYEE'] 
         },
         { 

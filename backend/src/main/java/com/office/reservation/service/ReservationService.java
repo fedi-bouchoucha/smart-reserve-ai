@@ -1,9 +1,6 @@
 package com.office.reservation.service;
 
-import com.office.reservation.dto.BulkReservationRequest;
-import com.office.reservation.dto.CalendarStatusDTO;
-import com.office.reservation.dto.ReservationRequest;
-import com.office.reservation.dto.ReservationResponse;
+import com.office.reservation.dto.*;
 import com.office.reservation.entity.Reservation;
 import com.office.reservation.entity.ReservationStatus;
 import com.office.reservation.entity.Role;
@@ -19,7 +16,6 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,19 +52,39 @@ public class ReservationService {
         LocalTime start = request.getStartTime() != null ? request.getStartTime() : LocalTime.of(9, 0);
         LocalTime end = request.getEndTime() != null ? request.getEndTime() : LocalTime.of(17, 0);
 
-        // Standard checks...
+        // Weekends check
         if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
             throw new RuntimeException("Cannot reserve on weekends.");
         }
-        if (reservationRepository.existsByUserIdAndDateAndStatus(userId, date, ReservationStatus.CONFIRMED)) {
-            throw new RuntimeException("You already have a confirmed reservation for this date.");
+
+        // For desk (chair) reservations, check duplicate booking on same date
+        if (request.getChairId() != null) {
+            if (reservationRepository.existsByUserIdAndDateAndStatusAndChairIsNotNull(userId, date, ReservationStatus.CONFIRMED)) {
+                throw new RuntimeException("You already have a confirmed desk reservation for this date.");
+            }
         }
 
-        // Rule 5: Capacity limit (20%)
-        long totalStaff = userRepository.countByRole(Role.EMPLOYEE) + userRepository.countByRole(Role.MANAGER);
-        long occupancy = reservationRepository.countByDateAndStatus(date, ReservationStatus.CONFIRMED);
-        if (totalStaff > 0 && ((double)(occupancy + 1) / totalStaff) > 0.20) {
-            throw new RuntimeException("Office capacity reached (20% limit).");
+        ReservationStatus finalStatus = ReservationStatus.CONFIRMED;
+
+        // Rule: 1st-20th Booking Window (Only for Desks)
+        if (request.getChairId() != null) {
+            LocalDate today = LocalDate.now();
+            YearMonth requestMonth = YearMonth.from(date);
+            YearMonth currentMonth = YearMonth.from(today);
+            
+            if (!requestMonth.isAfter(currentMonth)) {
+                throw new RuntimeException("You cannot reserve a desk for the current month. You must book in advance for a future month.");
+            }
+            
+            // If booking for next month, confirm only if today is <= 20
+            if (requestMonth.equals(currentMonth.plusMonths(1))) {
+                if (today.getDayOfMonth() > 20) {
+                    finalStatus = ReservationStatus.PENDING_APPROVAL;
+                }
+            } else {
+                // Booking for 2+ months in advance is automatically pending manager approval
+                finalStatus = ReservationStatus.PENDING_APPROVAL;
+            }
         }
 
         validateAvailability(request, start, end);
@@ -80,7 +96,7 @@ public class ReservationService {
                 .date(date)
                 .startTime(start)
                 .endTime(end)
-                .status(ReservationStatus.CONFIRMED)
+                .status(finalStatus)
                 .build();
 
         return mapToResponse(reservationRepository.save(res));
@@ -88,7 +104,10 @@ public class ReservationService {
 
     @Transactional
     public List<ReservationResponse> createBulkReservations(Long userId, BulkReservationRequest request) {
-        validateWeeklyLimits(userId, request.getDates(), true);
+        // Monthly 50% desk presence validation (only for desk reservations)
+        if (request.getChairId() != null) {
+            validateMonthlyPresence(userId, request.getDates());
+        }
 
         List<ReservationResponse> responses = new ArrayList<>();
         for (LocalDate date : request.getDates()) {
@@ -98,38 +117,63 @@ public class ReservationService {
         return responses;
     }
 
-    private void validateWeeklyLimits(Long userId, List<LocalDate> targetDates, boolean isAdding) {
-        // Group new dates by their week-starting Monday
-        Map<LocalDate, List<LocalDate>> datesByWeek = targetDates.stream()
-                .distinct()
-                .collect(Collectors.groupingBy(d -> d.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))));
+    /**
+     * Monthly presence validation for desk bookings.
+     * The 50% monthly rule is enforced by the DayOffService (days-off system).
+     * Desk bookings themselves don't block — the constraint is on days off count.
+     */
+    private void validateMonthlyPresence(Long userId, List<LocalDate> targetDates) {
+        // The 50% rule is enforced via the days-off calendar.
+        // Desk booking itself has no monthly limit — only per-date availability checks apply.
+    }
 
-        for (Map.Entry<LocalDate, List<LocalDate>> entry : datesByWeek.entrySet()) {
-            LocalDate weekStart = entry.getKey();
-            LocalDate weekEnd = weekStart.plusDays(4);
-            
-            // Current confirmed reservations in the database for this week
-            List<LocalDate> existingDates = reservationRepository.findConfirmedByUserAndWeek(userId, weekStart, weekEnd)
-                    .stream().map(Reservation::getDate).toList();
+    /**
+     * Create a meeting room booking with NO conditions — only check room availability.
+     * This is completely independent of desk reservations.
+     */
+    @Transactional
+    public ReservationResponse createMeetingRoomBooking(Long userId, MeetingRoomBookingRequest request) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        LocalTime start = request.getStartTime() != null ? request.getStartTime() : LocalTime.of(9, 0);
+        LocalTime end = request.getEndTime() != null ? request.getEndTime() : LocalTime.of(17, 0);
 
-            long finalCount;
-            if (isAdding) {
-                // Combine existing and new, ensuring uniqueness
-                java.util.Set<LocalDate> combined = new java.util.HashSet<>(existingDates);
-                combined.addAll(entry.getValue());
-                finalCount = combined.size();
-            } else {
-                // Subtract the ones being deleted from the existing list
-                finalCount = existingDates.size() - entry.getValue().size();
-            }
-
-            if (finalCount > 0 && (finalCount < 2 || finalCount > 3)) {
-                String weekRange = weekStart + " to " + weekEnd;
-                throw new RuntimeException("Weekly Rule Violation: You must have exactly 2 or 3 days booked PER WEEK. " +
-                        "Your current selection for the week (" + weekRange + ") results in " + finalCount + " day(s). " +
-                        "Please select another day or remove one to meet the 2-3 day requirement.");
-            }
+        if (request.getMeetingRoomId() == null) {
+            throw new RuntimeException("Meeting room must be specified.");
         }
+
+        // Only check: is the room available at this time?
+        if (reservationRepository.existsOverlappingRoomReservation(request.getMeetingRoomId(), request.getDate(), start, end)) {
+            throw new RuntimeException("This meeting room is already booked for the selected time slot.");
+        }
+
+        Reservation res = Reservation.builder()
+                .user(user)
+                .chair(null)
+                .meetingRoom(meetingRoomRepository.findById(request.getMeetingRoomId())
+                        .orElseThrow(() -> new RuntimeException("Meeting room not found")))
+                .date(request.getDate())
+                .startTime(start)
+                .endTime(end)
+                .status(ReservationStatus.CONFIRMED)
+                .build();
+
+        return mapToResponse(reservationRepository.save(res));
+    }
+
+    /**
+     * Get meeting room bookings for a specific user.
+     */
+    public List<ReservationResponse> getUserMeetingRoomBookings(Long userId) {
+        return reservationRepository.findByUserIdAndMeetingRoomIsNotNull(userId)
+                .stream().map(this::mapToResponse).toList();
+    }
+
+    /**
+     * Get desk reservations for a specific user.
+     */
+    public List<ReservationResponse> getUserDeskReservations(Long userId) {
+        return reservationRepository.findByUserIdAndChairIsNotNull(userId)
+                .stream().map(this::mapToResponse).toList();
     }
 
     private void validateAvailability(ReservationRequest req, LocalTime start, LocalTime end) {
@@ -153,21 +197,27 @@ public class ReservationService {
         return reservationRepository.findAll().stream().map(this::mapToResponse).toList();
     }
 
+    public List<ReservationResponse> getPendingApprovalsForManager(Long managerId) {
+        return reservationRepository.findByStatusAndChairIsNotNull(ReservationStatus.PENDING_APPROVAL)
+                .stream()
+                .filter(r -> r.getUser().getManager() != null && r.getUser().getManager().getId().equals(managerId))
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional
+    public ReservationResponse updatePendingReservationStatus(Long id, ReservationStatus newStatus) {
+        Reservation res = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+        res.setStatus(newStatus);
+        return mapToResponse(reservationRepository.save(res));
+    }
+
     @Transactional
     public void deleteReservation(Long userId, Long reservationId) {
         Reservation res = reservationRepository.findById(reservationId).orElseThrow();
         if (!res.getUser().getId().equals(userId)) throw new RuntimeException("Unauthorized");
-        
-        LocalDate weekStart = res.getDate().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
-        LocalDate weekEnd = weekStart.plusDays(4);
-        long count = reservationRepository.countByUserIdAndDateBetweenAndStatus(userId, weekStart, weekEnd, ReservationStatus.CONFIRMED);
-        
-        System.out.println("Delete Attempt: User " + userId + ", Week " + weekStart + " to " + weekEnd + ", Current Count: " + count);
-        
-        if (count < 3) {
-            throw new RuntimeException("Cancellation restricted: You must have 3 booked days for this week to be allowed to cancel one (leaving you with 2). If you need to clear your whole week, contact your manager.");
-        }
-        
+
         reservationRepository.delete(res);
 
         // Notify user about cancellation
@@ -202,6 +252,25 @@ public class ReservationService {
 
     public List<Object> getAvailableRooms(LocalDate date) {
         return meetingRoomRepository.findAvailableRooms(date, LocalTime.of(9,0), LocalTime.of(17,0)).stream().collect(Collectors.toList());
+    }
+
+    /**
+     * Get all rooms (for meeting room booking — shows all rooms regardless of availability).
+     */
+    public List<Object> getAllRooms() {
+        return meetingRoomRepository.findAll().stream().map(r -> (Object) Map.of(
+                "id", r.getId(),
+                "name", r.getName(),
+                "capacity", r.getCapacity() != null ? r.getCapacity() : 0,
+                "floor", r.getFloor() != null ? r.getFloor() : 0
+        )).collect(Collectors.toList());
+    }
+
+    /**
+     * Check if a specific room is available at a given date/time.
+     */
+    public boolean isRoomAvailable(Long roomId, LocalDate date, LocalTime start, LocalTime end) {
+        return !reservationRepository.existsOverlappingRoomReservation(roomId, date, start, end);
     }
 
     public List<CalendarStatusDTO> getCalendarAvailability(int year, int month, Long resourceId, String resourceType, Long userId) {

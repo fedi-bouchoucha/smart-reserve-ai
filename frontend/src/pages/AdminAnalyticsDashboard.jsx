@@ -9,20 +9,24 @@ import { DownloadCloud, Activity, TrendingUp, Users } from 'lucide-react';
 export default function AdminAnalyticsDashboard() {
     const [overview, setOverview] = useState(null);
     const [trends, setTrends] = useState([]);
-    const [peakHours, setPeakHours] = useState([]);
+    const [dailyPresence, setDailyPresence] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
 
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const [ovRes, trRes, phRes] = await Promise.all([
+                const [ovRes, trRes, dpRes] = await Promise.all([
                     api.get('/admin/analytics/overview'),
                     api.get('/admin/analytics/usage-trends'),
-                    api.get('/admin/analytics/peak-hours')
+                    api.get('/admin/analytics/daily-presence')
                 ]);
                 setOverview(ovRes.data);
                 setTrends(trRes.data);
-                setPeakHours(phRes.data);
+                setDailyPresence(dpRes.data);
             } catch (e) {
                 console.error("Failed to fetch analytics", e);
             } finally {
@@ -49,26 +53,35 @@ export default function AdminAnalyticsDashboard() {
                     <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Intelligent Analytics</h1>
                     <p style={{ color: 'hsl(var(--muted-foreground))' }}>Advanced office utilization and behavioral insights</p>
                 </div>
-                <button 
-                    className="btn-ui btn-outline"
-                    onClick={async () => {
-                        try {
-                            const response = await api.get('/admin/analytics/download-report', { responseType: 'blob' });
-                            const url = window.URL.createObjectURL(new Blob([response.data]));
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.setAttribute('download', 'office_usage_report.pdf');
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
-                        } catch (e) {
-                            alert('Failed to download report');
-                        }
-                    }}
-                >
-                    <DownloadCloud size={18} style={{ marginRight: '0.5rem' }}/>
-                    <span>Download Report</span>
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <input 
+                        type="month"
+                        className="input-modern"
+                        value={selectedMonth}
+                        onChange={e => setSelectedMonth(e.target.value)}
+                        style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.875rem' }}
+                    />
+                    <button 
+                        className="btn-ui btn-outline"
+                        onClick={async () => {
+                            try {
+                                const response = await api.get(`/admin/analytics/download-report?month=${selectedMonth}`, { responseType: 'blob' });
+                                const url = window.URL.createObjectURL(new Blob([response.data]));
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.setAttribute('download', `office_usage_report_${selectedMonth}.pdf`);
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                            } catch (e) {
+                                alert('Failed to download report');
+                            }
+                        }}
+                    >
+                        <DownloadCloud size={18} style={{ marginRight: '0.5rem' }}/>
+                        <span>Download Report</span>
+                    </button>
+                </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
@@ -122,21 +135,27 @@ export default function AdminAnalyticsDashboard() {
 
                 <div className="card-modern" style={{ padding: 0, overflow: 'hidden' }}>
                     <div style={{ padding: '1.5rem', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Activity size={18} style={{ color: 'hsl(var(--muted-foreground))' }} />
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Peak Hours Analysis</h3>
+                        <Users size={18} style={{ color: 'hsl(var(--muted-foreground))' }} />
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Daily Employee Presence (%)</h3>
                     </div>
                     <div style={{ height: 350, padding: '1.5rem 1.5rem 0.5rem 0' }}>
                         <ResponsiveContainer>
-                            <BarChart data={peakHours}>
-                                <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                            <AreaChart data={dailyPresence}>
+                                <defs>
+                                    <linearGradient id="colorPercentage" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
                                 <Tooltip 
-                                    cursor={{ fill: 'hsl(var(--muted))' }}
-                                    contentStyle={{ background: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                                    itemStyle={{ color: 'hsl(var(--success))', fontWeight: 600 }}
+                                    contentStyle={{ background: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 600 }}
+                                    formatter={(value) => [`${value}%`, 'Presence']}
                                 />
-                                <Bar dataKey="bookings" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
-                            </BarChart>
+                                <Area type="monotone" dataKey="percentage" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorPercentage)" />
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>

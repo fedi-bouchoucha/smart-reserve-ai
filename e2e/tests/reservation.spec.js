@@ -23,6 +23,33 @@ test.describe('Reservation and Notification Flow', () => {
 
         // 2. Create Reservation
         await empDash.navigateToNewReservation();
+        
+        // Compute next Monday and Tuesday to ensure they are in the same ISO week
+        // to comply with the "2 or 3 days per week" policy
+        const datesToSelect = await employeePage.evaluate(() => {
+            const today = new Date();
+            const nextMonday = new Date();
+            // find next Monday
+            nextMonday.setDate(today.getDate() + ((1 - today.getDay() + 7) % 7 || 7));
+            const nextTuesday = new Date(nextMonday);
+            nextTuesday.setDate(nextMonday.getDate() + 1);
+            
+            // Format dates accurately for local timezone (en-CA gives YYYY-MM-DD locally)
+            const y1 = nextMonday.getFullYear();
+            const m1 = String(nextMonday.getMonth() + 1).padStart(2, '0');
+            const d1 = String(nextMonday.getDate()).padStart(2, '0');
+            
+            const y2 = nextTuesday.getFullYear();
+            const m2 = String(nextTuesday.getMonth() + 1).padStart(2, '0');
+            const d2 = String(nextTuesday.getDate()).padStart(2, '0');
+            
+            return [`${y1}-${m1}-${d1}`, `${y2}-${m2}-${d2}`];
+        });
+
+        for (const dateStr of datesToSelect) {
+            await employeePage.locator(`[data-date="${dateStr}"] .fc-daygrid-day-frame`).click();
+        }
+        
         // Assuming desk 1 is available
         await empDash.selectResource(1); 
         await empDash.bookSelected();
@@ -46,10 +73,12 @@ test.describe('Reservation and Notification Flow', () => {
         await employeePage.getByText('Submit Request').click();
 
         // 5. Manager reviews and approves
-        await mngDash.goToRequests();
         await managerPage.reload(); // Ensure requests are loaded
+        await mngDash.goToRequests();
+        
+        // Wait for the API to load the requests (count should be greater than 0)
+        await expect(managerPage.getByTestId('pending-requests-count')).not.toHaveText('0', { timeout: 10000 });
         const counts = await mngDash.getCount();
-        expect(Number(counts)).toBeGreaterThan(0);
         
         await mngDash.approveRequest(1); 
 

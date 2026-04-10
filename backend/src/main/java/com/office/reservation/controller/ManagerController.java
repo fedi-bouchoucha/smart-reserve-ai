@@ -100,4 +100,22 @@ public class ManagerController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @GetMapping("/pending-approvals")
+    public ResponseEntity<List<com.office.reservation.dto.ReservationResponse>> getPendingApprovals(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User manager = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(reservationService.getPendingApprovalsForManager(manager.getId()));
+    }
+
+    @PostMapping("/reservations/{id}/approve")
+    public ResponseEntity<?> approveReservation(@PathVariable Long id) {
+        return ResponseEntity.ok(reservationService.updatePendingReservationStatus(id, com.office.reservation.entity.ReservationStatus.CONFIRMED));
+    }
+
+    @PostMapping("/reservations/{id}/reject")
+    public ResponseEntity<?> rejectReservation(@PathVariable Long id) {
+        return ResponseEntity.ok(reservationService.updatePendingReservationStatus(id, com.office.reservation.entity.ReservationStatus.CANCELLED));
+    }
 }

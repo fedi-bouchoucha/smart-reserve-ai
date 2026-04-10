@@ -1,9 +1,6 @@
 package com.office.reservation.controller;
 
-import com.office.reservation.dto.BulkReservationRequest;
-import com.office.reservation.dto.CalendarStatusDTO;
-import com.office.reservation.dto.ReservationRequest;
-import com.office.reservation.dto.ReservationResponse;
+import com.office.reservation.dto.*;
 import com.office.reservation.entity.User;
 import com.office.reservation.exception.ReservationConflictException;
 import com.office.reservation.repository.UserRepository;
@@ -81,12 +78,76 @@ public class ReservationController {
         }
     }
 
+    /**
+     * Book a meeting room freely — no conditions except room availability.
+     */
+    @PostMapping("/meeting-room")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<?> bookMeetingRoom(@AuthenticationPrincipal UserDetails userDetails,
+                                             @RequestBody MeetingRoomBookingRequest request) {
+        try {
+            User user = userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            ReservationResponse response = reservationService.createMeetingRoomBooking(user.getId(), request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/my")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<List<ReservationResponse>> getMyReservations(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(reservationService.getUserReservations(user.getId()));
+    }
+
+    /**
+     * Get only desk reservations for the current user.
+     */
+    @GetMapping("/my/desks")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<List<ReservationResponse>> getMyDeskReservations(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(reservationService.getUserDeskReservations(user.getId()));
+    }
+
+    /**
+     * Get only meeting room bookings for the current user.
+     */
+    @GetMapping("/my/meeting-rooms")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<List<ReservationResponse>> getMyMeetingRoomBookings(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(reservationService.getUserMeetingRoomBookings(user.getId()));
+    }
+
+    /**
+     * Get all meeting rooms (for listing in the booking form).
+     */
+    @GetMapping("/rooms/all")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<List<Object>> getAllRooms() {
+        return ResponseEntity.ok(reservationService.getAllRooms());
+    }
+
+    /**
+     * Check if a room is available at a specific date/time.
+     */
+    @GetMapping("/rooms/check-availability")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<Map<String, Object>> checkRoomAvailability(
+            @RequestParam Long roomId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam String startTime,
+            @RequestParam String endTime) {
+        java.time.LocalTime start = java.time.LocalTime.parse(startTime);
+        java.time.LocalTime end = java.time.LocalTime.parse(endTime);
+        boolean available = reservationService.isRoomAvailable(roomId, date, start, end);
+        return ResponseEntity.ok(Map.of("available", available));
     }
 
     @GetMapping("/my/weekly-counts")

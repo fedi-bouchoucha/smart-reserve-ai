@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -24,9 +25,33 @@ public class ReportService {
         this.userRepository = userRepository;
     }
 
-    public ByteArrayInputStream generateOfficeUsageReport() {
+    public ByteArrayInputStream generateOfficeUsageReport(String month) {
         Document document = new Document();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        List<Reservation> reservations;
+        String periodLabel = "All Time";
+        
+        if (month != null && month.trim().length() >= 7) {
+            try {
+                String cleanMonth = month.trim();
+                int year = Integer.parseInt(cleanMonth.substring(0, 4));
+                int m = Integer.parseInt(cleanMonth.substring(5, 7));
+                
+                LocalDate start = LocalDate.of(year, m, 1);
+                LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+                
+                reservations = reservationRepository.findByDateBetween(start, end);
+                periodLabel = start.getMonth().toString() + " " + year;
+            } catch (Exception e) {
+                System.err.println("ReportService Error parsing month: " + month + " - " + e.getMessage());
+                reservations = reservationRepository.findAll();
+                periodLabel = "All Time";
+            }
+        } else {
+            reservations = reservationRepository.findAll();
+            periodLabel = "All Time";
+        }
 
         try {
             PdfWriter.getInstance(document, out);
@@ -41,9 +66,9 @@ public class ReportService {
 
             // Statistics Section
             Font subHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
-            document.add(new Paragraph("System Statistics Summary", subHeaderFont));
+            document.add(new Paragraph("System Statistics Summary (" + periodLabel + ")", subHeaderFont));
             document.add(new Paragraph("Total Registered Users: " + userRepository.count()));
-            document.add(new Paragraph("Total System Reservations: " + reservationRepository.count()));
+            document.add(new Paragraph("Total Period Reservations: " + reservations.size()));
             document.add(new Paragraph(" ")); // Spacer
 
             // Reservations Table
@@ -59,7 +84,6 @@ public class ReportService {
                 table.addCell(cell);
             }
 
-            List<Reservation> reservations = reservationRepository.findAll();
             for (Reservation r : reservations) {
                 table.addCell(r.getUser().getFullName());
                 table.addCell(r.getDate().toString());

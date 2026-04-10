@@ -419,3 +419,70 @@ p {
   box-shadow: 0 0 0 1px hsl(var(--primary));
 }
 
+/* RESOURCE CARD MINI (for modals) */
+.resource-card-mini {
+  padding: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(var(--card));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.resource-card-mini:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  background: hsl(var(--secondary) / 0.3);
+}
+
+.resource-card-mini.selected {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.05);
+  box-shadow: 0 0 0 1px hsl(var(--primary));
+}
+
+/* BUTTON SIZE MODIFIERS */
+.btn-sm {
+  height: 2rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* DAYS OFF CALENDAR CELLS */
+.dayoff-existing {
+  background: rgba(255, 152, 0, 0.12) !important;
+}
+
+.dayoff-selected {
+  background: rgba(233, 30, 99, 0.12) !important;
+}
+
+/* PRESENCE COUNTER */
+.presence-bar {
+  height: 8px;
+  width: 100%;
+  background-color: hsl(var(--muted));
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.presence-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.presence-bar-fill.good { background-color: hsl(var(--success)); }
+.presence-bar-fill.danger { background-color: hsl(var(--destructive)); }
+
+/* MEETING ROOM BOOKING FORM */
+.meeting-room-form .form-group {
+  margin-bottom: 1rem;
+}
+
+/* RESPONSIVE ADJUSTMENTS */
+@media (max-width: 768px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+}

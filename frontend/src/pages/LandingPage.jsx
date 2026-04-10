@@ -38,11 +38,8 @@ export default function LandingPage() {
                         SmartReserve
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <Link to="/login" style={{ textDecoration: 'none', color: 'hsl(var(--foreground))', fontWeight: 600, fontSize: '0.9rem' }}>
+                        <Link to="/login" className="btn-ui btn-primary" style={{ textDecoration: 'none', padding: '0.5rem 1.25rem' }}>
                             Log In
-                        </Link>
-                        <Link to="/register" className="btn-ui btn-primary" style={{ textDecoration: 'none', padding: '0.5rem 1.25rem' }}>
-                            Sign Up
                         </Link>
                     </div>
                 </div>
@@ -77,11 +74,8 @@ export default function LandingPage() {
                     </motion.p>
                     
                     <motion.div variants={fadeUp} style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <Link to="/register" className="btn-ui btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            Get Started Free <ArrowRight size={20} />
-                        </Link>
-                        <Link to="/login" className="btn-ui btn-outline" style={{ padding: '1rem 2rem', fontSize: '1.1rem', textDecoration: 'none' }}>
-                            Book a Demo
+                        <Link to="/login" className="btn-ui btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            Get Started <ArrowRight size={20} />
                         </Link>
                     </motion.div>
                 </motion.div>
@@ -245,8 +239,8 @@ export default function LandingPage() {
             <section style={{ padding: '8rem 2rem', textAlign: 'center' }}>
                 <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1.5rem' }}>Ready to optimize your workspace?</h2>
                 <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '1.1rem', marginBottom: '2.5rem' }}>Join thousands of employees booking desks effortlessly.</p>
-                <Link to="/register" className="btn-ui btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.1rem', textDecoration: 'none', display: 'inline-flex' }}>
-                    Create your account setup
+                <Link to="/login" className="btn-ui btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.1rem', textDecoration: 'none', display: 'inline-flex' }}>
+                    Log into your dashboard
                 </Link>
             </section>
 

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.bind.annotation.RequestParam;
+
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
@@ -38,16 +40,17 @@ public class AdminAnalyticsController {
         return ResponseEntity.ok(analyticsService.getUsageTrends());
     }
 
-    @GetMapping("/peak-hours")
-    public ResponseEntity<List<Map<String, Object>>> getPeakHours() {
-        return ResponseEntity.ok(analyticsService.getPeakHours());
+    @GetMapping("/daily-presence")
+    public ResponseEntity<List<Map<String, Object>>> getDailyPresence() {
+        return ResponseEntity.ok(analyticsService.getDailyPresencePercentage());
     }
 
     @GetMapping("/download-report")
-    public ResponseEntity<InputStreamResource> downloadReport() {
-        ByteArrayInputStream bis = reportService.generateOfficeUsageReport();
+    public ResponseEntity<InputStreamResource> downloadReport(@RequestParam(required = false) String month) {
+        ByteArrayInputStream bis = reportService.generateOfficeUsageReport(month);
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=office_usage_report.pdf");
+        String filename = (month != null && !month.trim().isEmpty()) ? "office_usage_report_" + month + ".pdf" : "office_usage_report.pdf";
+        headers.add("Content-Disposition", "attachment; filename=" + filename);
 
         return ResponseEntity.ok()
                 .headers(headers)

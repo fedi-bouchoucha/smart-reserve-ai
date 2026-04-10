@@ -81,7 +81,20 @@ CREATE TABLE change_requests (
     CONSTRAINT fk_change_new_room FOREIGN KEY (new_meeting_room_id) REFERENCES meeting_rooms(id)
 );
 
+-- 8. Create Days Off Table
+CREATE TABLE days_off (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    date DATE NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'CONFIRMED', -- 'CONFIRMED', 'CANCELLED'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_dayoff_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT uq_dayoff_user_date UNIQUE (user_id, date)
+);
+
 -- Indexes for performance
 CREATE INDEX idx_reservation_date ON reservations(date);
 CREATE INDEX idx_reservation_user ON reservations(user_id);
 CREATE INDEX idx_user_manager ON users(manager_id);
+CREATE INDEX idx_dayoff_user ON days_off(user_id);
+CREATE INDEX idx_dayoff_date ON days_off(date);

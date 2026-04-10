@@ -8,12 +8,24 @@ class WebSocketService {
     }
 
     connect(onMessageReceived) {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || !user.username) return;
+        let user;
+        try {
+            user = JSON.parse(localStorage.getItem('user'));
+        } catch (e) {
+            console.warn('Could not parse user from local storage:', e);
+            return;
+        }
+
+        if (!user || !user.username) {
+            return;
+        }
+
+        // Cleanup existing connection if any
+        this.disconnect();
 
         const socket = new SockJS('http://localhost:8080/ws');
         this.stompClient = Stomp.over(socket);
-        this.stompClient.debug = null; // Disable debug logs in console
+        this.stompClient.debug = () => {}; // No-op for debug to keep console clean
 
         this.stompClient.connect({}, (frame) => {
             // Subscribe to user-specific notification topic
@@ -35,7 +47,12 @@ class WebSocketService {
 
     disconnect() {
         if (this.stompClient !== null) {
-            this.stompClient.disconnect();
+            if (this.stompClient.connected) {
+                try {
+                    this.stompClient.disconnect();
+                } catch(e) { }
+            }
+            this.stompClient = null;
         }
     }
 }

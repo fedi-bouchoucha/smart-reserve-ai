@@ -23,6 +23,7 @@ export default function ManagerDashboard() {
     const { user } = useAuth();
     const [tab, setTab] = useState('requests');
     const [pendingRequests, setPendingRequests] = useState([]);
+    const [deskApprovals, setDeskApprovals] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -45,12 +46,14 @@ export default function ManagerDashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [reqRes, empRes] = await Promise.all([
+            const [reqRes, empRes, deskRes] = await Promise.all([
                 api.get('/manager/change-requests'),
-                api.get('/manager/employees')
+                api.get('/manager/employees'),
+                api.get('/manager/pending-approvals')
             ]);
             setPendingRequests(reqRes.data);
             setEmployees(empRes.data);
+            setDeskApprovals(deskRes.data);
         } catch (e) { console.error(e); }
         setLoading(false);
     };
@@ -130,14 +133,23 @@ export default function ManagerDashboard() {
                 )}
             </AnimatePresence>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                <div className="card-modern" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{ background: 'hsl(var(--warning) / 0.1)', padding: '0.75rem', borderRadius: '0.75rem', color: 'hsl(var(--warning))' }}>
+                        <Calendar size={24} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{deskApprovals.length}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase' }}>Late Bookings</div>
+                    </div>
+                </div>
                 <div className="card-modern" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }} data-testid="pending-requests-card">
                     <div style={{ background: 'hsl(var(--primary) / 0.1)', padding: '0.75rem', borderRadius: '0.75rem', color: 'hsl(var(--primary))' }}>
                         <ClipboardCheck size={24} />
                     </div>
                     <div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 800 }} data-testid="pending-requests-count">{pendingRequests.length}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase' }}>Attention Required</div>
+                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase' }}>Change Req.</div>
                     </div>
                 </div>
                 <div className="card-modern" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -154,6 +166,9 @@ export default function ManagerDashboard() {
             <div className="tabs" style={{ marginBottom: '1.5rem' }}>
                 <button className={`tab-btn ${tab === 'requests' ? 'active' : ''}`} onClick={() => setTab('requests')} data-testid="tab-requests">
                     <ClipboardCheck size={16} /> <span>Change Requests</span>
+                </button>
+                <button className={`tab-btn ${tab === 'desk-approvals' ? 'active' : ''}`} onClick={() => setTab('desk-approvals')} data-testid="tab-desk-approvals">
+                    <Calendar size={16} /> <span>Late Bookings</span>
                 </button>
                 <button className={`tab-btn ${tab === 'team' ? 'active' : ''}`} onClick={() => setTab('team')} data-testid="tab-team">
                     <Users size={16} /> <span>My Team</span>
@@ -210,6 +225,39 @@ export default function ManagerDashboard() {
                                                         <X size={16} />
                                                         <span>Reject</span>
                                                     </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </>
+                )}
+
+                {tab === 'desk-approvals' && (
+                    <>
+                        {deskApprovals.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '4rem' }}>
+                                <div style={{ background: 'hsl(var(--secondary))', width: '64px', height: '64px', borderRadius: '99px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'hsl(var(--muted-foreground))' }}><CheckCircle2 size={32} /></div>
+                                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>All Clear!</h3>
+                                <p style={{ color: 'hsl(var(--muted-foreground))' }}>No pending late desk bookings to review.</p>
+                            </div>
+                        ) : (
+                            <table className="table-ui">
+                                <thead>
+                                    <tr><th>Employee</th><th>Date Requested</th><th>Desk</th><th style={{ textAlign: 'right' }}>Decide</th></tr>
+                                </thead>
+                                <tbody>
+                                    {deskApprovals.map(da => (
+                                        <tr key={da.id}>
+                                            <td style={{ fontWeight: 600 }}>{da.userName}</td>
+                                            <td><div className="badge-ui" style={{ background: 'hsl(var(--warning) / 0.1)', color: 'hsl(var(--warning))', fontWeight: 700 }}>{da.date}</div></td>
+                                            <td><div style={{ fontSize: '0.875rem' }}>🪑 {da.chairInfo}</div></td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                    <button className="btn-ui btn-primary btn-sm" onClick={() => handleDeskApproval(da.id, 'approve')}><Check size={16} /><span>Approve</span></button>
+                                                    <button className="btn-ui btn-outline btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDeskApproval(da.id, 'reject')}><X size={16} /><span>Reject</span></button>
                                                 </div>
                                             </td>
                                         </tr>

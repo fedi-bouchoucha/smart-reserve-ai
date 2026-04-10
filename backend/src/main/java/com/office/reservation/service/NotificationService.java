@@ -47,7 +47,7 @@ public class NotificationService {
             
             mailSender.send(message);
             notification.setStatus(Notification.NotificationStatus.SENT);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             notification.setStatus(Notification.NotificationStatus.FAILED);
             // In production, we'd log this properly or use a retry queue
             System.err.println("Failed to send email: " + e.getMessage());

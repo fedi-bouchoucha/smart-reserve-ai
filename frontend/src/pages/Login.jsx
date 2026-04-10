@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Lock, User, LogIn, ChevronRight, Info } from 'lucide-react';
@@ -9,22 +9,28 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
+    const { user, login } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (user) {
+            switch (user.role) {
+                case 'ADMIN': navigate('/admin'); break;
+                case 'MANAGER': navigate('/manager'); break;
+                default: navigate('/employee');
+            }
+        }
+    }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            const data = await login(username, password);
-            switch (data.role) {
-                case 'ADMIN': navigate('/admin'); break;
-                case 'MANAGER': navigate('/manager'); break;
-                default: navigate('/employee');
-            }
+            await login(username, password);
         } catch (err) {
-            setError(err.response?.data?.error || 'Invalid credentials');
+            // Spring boot login endpoint error handling, force "Invalid credentials"
+            setError('Invalid credentials');
         } finally {
             setLoading(false);
         }
@@ -133,18 +139,6 @@ export default function Login() {
                             </>
                         )}
                     </button>
-
-                    <div style={{ 
-                        marginTop: '2rem', 
-                        textAlign: 'center', 
-                        fontSize: '0.875rem',
-                        color: 'hsl(var(--muted-foreground))'
-                    }}>
-                        Don't have an account? {' '}
-                        <Link to="/register" style={{ color: 'hsl(var(--primary))', fontWeight: 600, textDecoration: 'none' }}>
-                            Create account
-                        </Link>
-                    </div>
                 </form>
 
                 <div 
