@@ -1,5 +1,6 @@
 package com.office.reservation.controller;
 
+import com.office.reservation.dto.AutoAssignmentResponse;
 import com.office.reservation.dto.UserCreateRequest;
 import com.office.reservation.dto.UserResponse;
 import com.office.reservation.entity.ReservationStatus;
@@ -7,6 +8,7 @@ import com.office.reservation.entity.Role;
 import com.office.reservation.repository.ReservationRepository;
 import com.office.reservation.repository.UserRepository;
 import com.office.reservation.repository.ChangeRequestRepository;
+import com.office.reservation.service.AutoAssignmentService;
 import com.office.reservation.service.ChangeRequestService;
 import com.office.reservation.service.ReservationService;
 import com.office.reservation.service.UserService;
@@ -27,6 +29,7 @@ public class AdminController {
     private final UserService userService;
     private final ReservationService reservationService;
     private final ChangeRequestService changeRequestService;
+    private final AutoAssignmentService autoAssignmentService;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final ChangeRequestRepository changeRequestRepository;
@@ -34,12 +37,14 @@ public class AdminController {
     public AdminController(UserService userService,
                           ReservationService reservationService,
                           ChangeRequestService changeRequestService,
+                          AutoAssignmentService autoAssignmentService,
                           UserRepository userRepository,
                           ReservationRepository reservationRepository,
                           ChangeRequestRepository changeRequestRepository) {
         this.userService = userService;
         this.reservationService = reservationService;
         this.changeRequestService = changeRequestService;
+        this.autoAssignmentService = autoAssignmentService;
         this.userRepository = userRepository;
         this.reservationRepository = reservationRepository;
         this.changeRequestRepository = changeRequestRepository;
@@ -124,6 +129,20 @@ public class AdminController {
         try {
             changeRequestRepository.deleteById(id);
             return ResponseEntity.ok(Map.of("message", "Change request deleted"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Auto-assign random chairs to employees who didn't reserve during the booking window (1st-20th).
+     * Admin specifies the target year and month.
+     */
+    @PostMapping("/auto-assign")
+    public ResponseEntity<?> autoAssignChairs(@RequestParam int year, @RequestParam int month) {
+        try {
+            AutoAssignmentResponse result = autoAssignmentService.autoAssignChairsForMonth(year, month);
+            return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

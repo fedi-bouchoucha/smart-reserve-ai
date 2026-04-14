@@ -302,9 +302,10 @@ export default function EmployeeDashboard() {
 
         // Existing desk reservations
         deskReservations.forEach(r => {
+            const isAutoAssigned = r.status === 'AUTO_ASSIGNED';
             events.push({
-                title: `🪑 ${(r.chairInfo?.split(' ')[1] || 'Desk')}`,
-                start: r.date, allDay: true, color: 'hsl(var(--primary))'
+                title: `${isAutoAssigned ? '🎲' : '🪑'} ${(r.chairInfo?.split(' ')[1] || 'Desk')}`,
+                start: r.date, allDay: true, color: isAutoAssigned ? 'hsl(270, 70%, 55%)' : 'hsl(var(--primary))'
             });
         });
 
@@ -399,6 +400,9 @@ export default function EmployeeDashboard() {
                                                 <div className="badge-ui badge-indigo">🪑 {r.chairInfo}</div>
                                                 {r.status === 'PENDING_APPROVAL' && (
                                                     <div className="badge-ui" style={{ background: 'hsl(var(--warning) / 0.1)', color: 'hsl(var(--warning))' }}>Pending Manager</div>
+                                                )}
+                                                {r.status === 'AUTO_ASSIGNED' && (
+                                                    <div className="badge-ui" style={{ background: 'linear-gradient(135deg, hsl(270 70% 55% / 0.12), hsl(290 70% 50% / 0.12))', color: 'hsl(270 70% 55%)' }}>🎲 Auto-assigned</div>
                                                 )}
                                             </div>
                                         </td>

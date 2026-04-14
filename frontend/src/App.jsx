@@ -5,6 +5,7 @@ import EmployeeDashboard from './pages/EmployeeDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAnalyticsDashboard from './pages/AdminAnalyticsDashboard';
+import PerformanceAnalytics from './pages/PerformanceAnalytics';
 import Profile from './pages/Profile';
 import MeetingRoomBooking from './pages/MeetingRoomBooking';
 import Layout from './components/Layout';
@@ -54,6 +55,11 @@ function App() {
                     <Route path="/admin/analytics" element={
                         <ProtectedRoute roles={['ADMIN']}>
                             <Layout><AdminAnalyticsDashboard /></Layout>
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/admin/performance" element={
+                        <ProtectedRoute roles={['ADMIN']}>
+                            <Layout><PerformanceAnalytics /></Layout>
                         </ProtectedRoute>
                     } />
                     <Route path="/meeting-rooms" element={

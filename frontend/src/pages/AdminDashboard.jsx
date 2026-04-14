@@ -13,7 +13,10 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
-  X
+  X,
+  Shuffle,
+  Zap,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -27,6 +30,16 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Auto-assign state
+    const [showAutoAssignModal, setShowAutoAssignModal] = useState(false);
+    const [autoAssignLoading, setAutoAssignLoading] = useState(false);
+    const [autoAssignResult, setAutoAssignResult] = useState(null);
+    const [autoAssignMonth, setAutoAssignMonth] = useState(() => {
+        const now = new Date();
+        const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+    });
 
     // User form
     const [showUserModal, setShowUserModal] = useState(false);
@@ -129,6 +142,24 @@ export default function AdminDashboard() {
         setUserForm({ username: '', password: '', fullName: '', email: '', role: 'EMPLOYEE', managerId: '' });
     };
 
+    const handleAutoAssign = async () => {
+        const [yearStr, monthStr] = autoAssignMonth.split('-');
+        const year = parseInt(yearStr);
+        const month = parseInt(monthStr);
+        setAutoAssignLoading(true);
+        setAutoAssignResult(null);
+        try {
+            const res = await api.post(`/admin/auto-assign?year=${year}&month=${month}`);
+            setAutoAssignResult(res.data);
+            setMessage({ type: 'success', text: `Auto-assigned ${res.data.totalReservationsCreated} reservations for ${res.data.totalEmployeesProcessed} employees` });
+            loadStats();
+        } catch (e) {
+            setMessage({ type: 'error', text: e.response?.data?.error || 'Auto-assignment failed' });
+        }
+        setAutoAssignLoading(false);
+    };
+
+
     const filteredUsers = users.filter(u => 
         u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.username?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -145,6 +176,10 @@ export default function AdminDashboard() {
                     <button className="btn-ui btn-outline" onClick={() => { loadStats(); loadUsers(); }}>
                         <RefreshCcw size={18} />
                         <span>Refresh</span>
+                    </button>
+                    <button className="btn-ui btn-primary" style={{ background: 'linear-gradient(135deg, hsl(270 70% 55%), hsl(290 70% 50%))', border: 'none' }} onClick={() => { setShowAutoAssignModal(true); setAutoAssignResult(null); }}>
+                        <Shuffle size={18} />
+                        <span>Auto-Assign</span>
                     </button>
                     <button className="btn-ui btn-primary" onClick={() => navigate('/admin/analytics')}>
                         <BarChart3 size={18} />
@@ -272,7 +307,7 @@ export default function AdminDashboard() {
                                         </div>
                                     </td>
                                     <td>{r.date}</td>
-                                    <td><div className={`badge-ui ${r.status === 'CONFIRMED' ? 'badge-success' : 'badge-warning'}`}>{r.status}</div></td>
+                                    <td><div className={`badge-ui ${r.status === 'CONFIRMED' ? 'badge-success' : r.status === 'AUTO_ASSIGNED' ? 'badge-indigo' : 'badge-warning'}`}>{r.status === 'AUTO_ASSIGNED' ? '🎲 Auto-Assigned' : r.status}</div></td>
                                     <td style={{ textAlign: 'right' }}>
                                         <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDeleteReservation(r.id)}>
                                             <Trash2 size={16} />
@@ -364,6 +399,132 @@ export default function AdminDashboard() {
                                 <button className="btn-ui btn-ghost" onClick={() => setShowUserModal(false)}>Cancel</button>
                                 <button className="btn-ui btn-primary" onClick={handleSaveUser}>
                                     {loading ? 'Processing...' : 'Save User Profile'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Auto-Assign Modal */}
+            <AnimatePresence>
+                {showAutoAssignModal && (
+                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowAutoAssignModal(false)}>
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="modal-content modal-modern-content" 
+                            onClick={e => e.stopPropagation()} 
+                            style={{ maxWidth: '560px' }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ 
+                                        background: 'linear-gradient(135deg, hsl(270 70% 55% / 0.15), hsl(290 70% 50% / 0.15))', 
+                                        padding: '0.6rem', 
+                                        borderRadius: '0.75rem',
+                                        color: 'hsl(270 70% 55%)'
+                                    }}>
+                                        <Shuffle size={22} />
+                                    </div>
+                                    <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Auto-Assign Chairs</h2>
+                                </div>
+                                <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setShowAutoAssignModal(false)} />
+                            </div>
+
+                            <div style={{ 
+                                background: 'hsl(var(--muted) / 0.3)', 
+                                borderRadius: '0.75rem', 
+                                padding: '1rem 1.25rem', 
+                                marginBottom: '1.5rem',
+                                display: 'flex',
+                                gap: '0.75rem',
+                                alignItems: 'flex-start'
+                            }}>
+                                <Info size={18} style={{ color: 'hsl(var(--primary))', marginTop: '2px', flexShrink: 0 }} />
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
+                                    This will randomly assign chairs for <strong>all working days</strong> of the selected month 
+                                    to employees who <strong>did not reserve</strong> during the booking window (1st–20th). 
+                                    Employees with existing reservations or days off will be skipped.
+                                </p>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                                <label className="form-label">Target Month</label>
+                                <input 
+                                    className="input-modern" 
+                                    type="month" 
+                                    value={autoAssignMonth}
+                                    onChange={(e) => setAutoAssignMonth(e.target.value)}
+                                />
+                            </div>
+
+                            {autoAssignResult && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    style={{ marginBottom: '1.5rem' }}
+                                >
+                                    <div style={{ 
+                                        background: 'hsl(var(--success) / 0.08)', 
+                                        border: '1px solid hsl(var(--success) / 0.2)', 
+                                        borderRadius: '0.75rem', 
+                                        padding: '1.25rem' 
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                            <Zap size={18} style={{ color: 'hsl(var(--success))' }} />
+                                            <span style={{ fontWeight: 700, color: 'hsl(var(--success))' }}>Assignment Complete</span>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                            <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
+                                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))' }}>{autoAssignResult.totalEmployeesProcessed}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employees Processed</div>
+                                            </div>
+                                            <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
+                                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--success))' }}>{autoAssignResult.totalReservationsCreated}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reservations Created</div>
+                                            </div>
+                                        </div>
+
+                                        {autoAssignResult.skippedEmployees?.length > 0 && (
+                                            <div style={{ marginTop: '1rem' }}>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--muted-foreground))' }}>Skipped (already reserved):</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>
+                                                    {autoAssignResult.skippedEmployees.map((e, i) => (
+                                                        <div key={i} style={{ padding: '0.2rem 0' }}>• {e}</div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {autoAssignResult.warnings?.length > 0 && (
+                                            <div style={{ marginTop: '1rem' }}>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--warning))' }}>⚠ Warnings:</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--warning))' }}>
+                                                    {autoAssignResult.warnings.map((w, i) => (
+                                                        <div key={i} style={{ padding: '0.2rem 0' }}>• {w}</div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            <div className="modal-actions" style={{ marginTop: '1rem' }}>
+                                <button className="btn-ui btn-ghost" onClick={() => setShowAutoAssignModal(false)}>Close</button>
+                                <button 
+                                    className="btn-ui btn-primary" 
+                                    onClick={handleAutoAssign} 
+                                    disabled={autoAssignLoading}
+                                    style={{ background: 'linear-gradient(135deg, hsl(270 70% 55%), hsl(290 70% 50%))', border: 'none' }}
+                                >
+                                    {autoAssignLoading ? (
+                                        <><RefreshCcw size={16} className="spin" /> Processing...</>
+                                    ) : (
+                                        <><Shuffle size={16} /> Run Auto-Assignment</>
+                                    )}
                                 </button>
                             </div>
                         </motion.div>

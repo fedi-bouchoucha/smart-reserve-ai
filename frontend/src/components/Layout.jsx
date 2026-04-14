@@ -11,7 +11,8 @@ import {
   Moon,
   ChevronRight,
   PieChart,
-  Building2
+  Building2,
+  Brain
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,6 +57,12 @@ export default function Layout({ children }) {
             label: "Team Management", 
             icon: Users, 
             roles: ['MANAGER'] 
+        },
+        { 
+            to: "/admin/performance", 
+            label: "Performance AI", 
+            icon: Brain, 
+            roles: ['ADMIN'] 
         },
         { 
             to: "/admin", 

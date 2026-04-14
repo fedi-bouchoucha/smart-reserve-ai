@@ -48,7 +48,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByUserIdAndMeetingRoomIsNotNull(@Param("userId") Long userId);
 
     // Desk bookings for a user (where chair is not null)
-    @Query("SELECT r FROM Reservation r WHERE r.user.id = :userId AND r.chair IS NOT NULL AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL') ORDER BY r.date DESC")
+    @Query("SELECT r FROM Reservation r WHERE r.user.id = :userId AND r.chair IS NOT NULL AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED') ORDER BY r.date DESC")
     List<Reservation> findByUserIdAndChairIsNotNull(@Param("userId") Long userId);
 
     // Count desk reservations for a user in a given month
@@ -58,4 +58,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     // Check if user already has a desk reservation for a date
     @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.user.id = :userId AND r.date = :date AND r.status = :status AND r.chair IS NOT NULL")
     boolean existsByUserIdAndDateAndStatusAndChairIsNotNull(@Param("userId") Long userId, @Param("date") LocalDate date, @Param("status") ReservationStatus status);
+
+    // Find distinct user IDs who have at least one desk reservation in a date range (any non-cancelled status)
+    @Query("SELECT DISTINCT r.user.id FROM Reservation r WHERE r.chair IS NOT NULL AND r.date >= :start AND r.date <= :end AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED')")
+    List<Long> findUserIdsWithDeskReservationsInRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    // Check if a user already has any desk reservation (any status) for a specific date
+    @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.user.id = :userId AND r.date = :date AND r.chair IS NOT NULL AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED')")
+    boolean existsDeskReservationForUserAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
 }

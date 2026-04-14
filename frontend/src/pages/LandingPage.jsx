@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-    Calendar, Users, MapPin, BarChart3, 
+import {
+    Calendar, Users, MapPin, BarChart3,
     ArrowRight, CheckCircle2, Shield, Zap,
-    Building2, Briefcase, Coffee, Globe
+    Building2, Briefcase, Coffee, Globe,
+    HelpCircle, Clock, Info, Target as TargetIcon
 } from 'lucide-react';
 
 // Animation variants
@@ -23,19 +24,42 @@ const staggerContainer = {
 export default function LandingPage() {
     return (
         <div style={{ minHeight: '100vh', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))', overflowX: 'hidden' }}>
-            
+
             {/* Header / Navbar */}
-            <header style={{ 
-                position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, 
+            <header style={{
+                position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
                 background: 'hsl(var(--background) / 0.8)', backdropFilter: 'blur(12px)',
                 borderBottom: '1px solid hsl(var(--border))'
             }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800, fontSize: '1.25rem' }}>
-                        <div style={{ background: 'hsl(var(--primary))', color: 'white', padding: '0.5rem', borderRadius: '0.5rem' }}>
-                            <Calendar size={20} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                        <img
+                            src="/logo.jpg"
+                            alt="Dräxlmaier Logo"
+                            style={{
+                                height: '100px',
+                                width: 'auto',
+                                filter: 'brightness(1.1)',
+                                transition: 'transform 0.3s ease'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        />
+                        <div style={{
+                            fontSize: '1.75rem',
+                            fontWeight: 900,
+                            letterSpacing: '-0.03em',
+                            color: 'hsl(var(--foreground))',
+                            background: 'linear-gradient(to right, hsl(var(--foreground)), hsl(var(--foreground) / 0.7))',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.6rem'
+                        }}>
+                            <span style={{ height: '40px', width: '2px', background: 'hsl(var(--border))', margin: '0 0.8rem' }} />
+                            SmartReserve
                         </div>
-                        SmartReserve
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <Link to="/login" className="btn-ui btn-primary" style={{ textDecoration: 'none', padding: '0.5rem 1.25rem' }}>
@@ -45,11 +69,12 @@ export default function LandingPage() {
                 </div>
             </header>
 
+
             {/* Hero Section */}
-            <section style={{ 
-                padding: '10rem 2rem 6rem', 
-                textAlign: 'center', 
-                maxWidth: '1000px', 
+            <section style={{
+                padding: '10rem 2rem 6rem',
+                textAlign: 'center',
+                maxWidth: '1000px',
                 margin: '0 auto',
                 position: 'relative'
             }}>
@@ -61,31 +86,176 @@ export default function LandingPage() {
                     <motion.div variants={fadeUp} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', borderRadius: '99px', fontSize: '0.875rem', fontWeight: 600, marginBottom: '2rem' }}>
                         <Zap size={16} /> <span>Smart Office Management v2.0 is live</span>
                     </motion.div>
-                    
+
                     <motion.h1 variants={fadeUp} style={{ fontSize: 'clamp(3rem, 5vw, 4.5rem)', fontWeight: 800, lineHeight: 1.1, marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
                         Book your workspace.<br />
                         <span style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--success)))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                             Collaborate effortlessly.
                         </span>
                     </motion.h1>
-                    
+
                     <motion.p variants={fadeUp} style={{ fontSize: '1.25rem', color: 'hsl(var(--muted-foreground))', maxWidth: '600px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
                         The intelligent platform for managing hybrid office presence, scheduling meeting rooms, and synchronizing your team's weekly flow.
                     </motion.p>
-                    
+
                     <motion.div variants={fadeUp} style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <Link to="/login" className="btn-ui btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             Get Started <ArrowRight size={20} />
                         </Link>
                     </motion.div>
                 </motion.div>
+                {/* How It Works Section (Tutorials) */}
+                <section id="how-it-works" style={{ padding: '8rem 2rem', background: 'hsl(var(--secondary) / 0.15)', borderTop: '1px solid hsl(var(--border))', borderBottom: '1px solid hsl(var(--border))' }}>
+                    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1.25rem', background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', borderRadius: '99px', fontSize: '0.875rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+                                <HelpCircle size={16} /> <span>Get Started Quickly</span>
+                            </div>
+                            <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem' }}>How it Works for Employees</h2>
+                            <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
+                                Master the platform in minutes with our simple 4-step workflow designed for agile teams.
+                            </p>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '2.5rem', marginBottom: '5rem' }}>
+                            {/* Step 1 */}
+                            <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'hsl(var(--primary) / 0.1)', marginBottom: '-1.5rem', marginLeft: '-0.5rem' }}>01</div>
+                                <div style={{ position: 'relative', zIndex: 1, padding: '2rem', background: 'hsl(var(--card))', borderRadius: '1rem', border: '1px solid hsl(var(--border))', height: '100%', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'hsl(var(--primary))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                                        <MapPin size={24} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>Select your Spot</h3>
+                                    <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.925rem', lineHeight: 1.6 }}>
+                                        Click any future date on the calendar. Browse available desks or meeting rooms and pick the one that fits your needs.
+                                    </p>
+                                </div>
+                            </motion.div>
+
+                            {/* Step 2 */}
+                            <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.1 }}>
+                                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'hsl(var(--success) / 0.1)', marginBottom: '-1.5rem', marginLeft: '-0.5rem' }}>02</div>
+                                <div style={{ position: 'relative', zIndex: 1, padding: '2rem', background: 'hsl(var(--card))', borderRadius: '1rem', border: '1px solid hsl(var(--border))', height: '100%', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'hsl(var(--success))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                                        <Coffee size={24} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>Mark your Days Off</h3>
+                                    <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.925rem', lineHeight: 1.6 }}>
+                                        Toggle to "Days Off" mode to plan your remote working days. The system automatically tracks your presence goals.
+                                    </p>
+                                </div>
+                            </motion.div>
+
+                            {/* Step 3 */}
+                            <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.2 }}>
+                                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'hsl(var(--warning) / 0.1)', marginBottom: '-1.5rem', marginLeft: '-0.5rem' }}>03</div>
+                                <div style={{ position: 'relative', zIndex: 1, padding: '2rem', background: 'hsl(var(--card))', borderRadius: '1rem', border: '1px solid hsl(var(--border))', height: '100%', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'hsl(var(--warning))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                                        <Clock size={24} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>Flexible Changes</h3>
+                                    <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.925rem', lineHeight: 1.6 }}>
+                                        Plans changed? Use the "Change Request" tool. Your manager will review and approve your request in real-time.
+                                    </p>
+                                </div>
+                            </motion.div>
+
+                            {/* Step 4 */}
+                            <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} transition={{ delay: 0.3 }}>
+                                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'hsl(var(--primary) / 0.1)', marginBottom: '-1.5rem', marginLeft: '-0.5rem' }}>04</div>
+                                <div style={{ position: 'relative', zIndex: 1, padding: '2rem', background: 'hsl(var(--card))', borderRadius: '1rem', border: '1px solid hsl(var(--border))', height: '100%', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'hsl(var(--primary))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                                        <Zap size={24} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>Stay Connected</h3>
+                                    <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.925rem', lineHeight: 1.6 }}>
+                                        Receive instant alerts when your team is in the office or when your requests are updated.
+                                    </p>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        {/* Rules Card */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            style={{
+                                background: 'linear-gradient(135deg, hsl(var(--primary) / 0.05), hsl(var(--success) / 0.05))',
+                                padding: '3rem',
+                                borderRadius: '1.5rem',
+                                border: '1px solid hsl(var(--primary) / 0.2)',
+                                display: 'flex',
+                                gap: '3rem',
+                                alignItems: 'center',
+                                flexWrap: 'wrap'
+                            }}
+                        >
+                            <div style={{ flex: 1, minWidth: '300px' }}>
+                                <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <Shield style={{ color: 'hsl(var(--primary))' }} /> Smart Office Compliance
+                                </h3>
+                                <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '2rem', lineHeight: 1.6 }}>
+                                    Our platform helps you stay aligned with company culture. Keep these two core policies in mind while planning:
+                                </p>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem' }}>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <div style={{ color: 'hsl(var(--primary))', marginTop: '0.25rem' }}><Clock size={20} /></div>
+                                        <div>
+                                            <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'hsl(var(--foreground))' }}>Booking Window</div>
+                                            <p style={{ fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))', lineHeight: 1.5 }}>
+                                                Reserve between the <strong>1st & 20th</strong> for the next month. Standard self-service window.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <div style={{ color: 'hsl(var(--success))', marginTop: '0.25rem' }}><TargetIcon size={20} /></div>
+                                        <div>
+                                            <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'hsl(var(--foreground))' }}>Collaborative Presence</div>
+                                            <p style={{ fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))', lineHeight: 1.5 }}>
+                                                Maintain at least <strong>50% office presence</strong> monthly to foster team synergy and innovation.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{
+                                width: '240px',
+                                margin: '0 auto',
+                                background: 'hsl(var(--card))',
+                                borderRadius: '1.25rem',
+                                padding: '2rem',
+                                border: '1px solid hsl(var(--border))',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                                    <TargetIcon size={32} />
+                                </div>
+                                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'hsl(var(--primary))', marginBottom: '0.25rem' }}>50%</div>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--muted-foreground))', letterSpacing: '0.1em' }}>Minimum Presence</div>
+                                <div style={{ width: '100%', height: '8px', background: 'hsl(var(--secondary))', borderRadius: '4px', marginTop: '1.5rem', overflow: 'hidden' }}>
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        whileInView={{ width: '50%' }}
+                                        transition={{ duration: 1, delay: 0.5 }}
+                                        style={{ height: '100%', background: 'hsl(var(--primary))' }}
+                                    />
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
 
                 {/* Dashboard Mockup Visual */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 100 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4, duration: 0.8, type: "spring", stiffness: 50 }}
-                    style={{ 
+                    style={{
                         marginTop: '5rem',
                         borderRadius: '0.75rem',
                         border: '1px solid hsl(var(--border))',
@@ -169,7 +339,7 @@ export default function LandingPage() {
                     {/* Feature 3 */}
                     <div className="card-modern" style={{ padding: '2rem' }}>
                         <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'hsl(var(--warning) / 0.1)', color: 'hsl(var(--warning))', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                            <Target size={24} />
+                            <TargetIcon size={24} />
                         </div>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>Smart Compliance</h3>
                         <p style={{ color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
@@ -190,11 +360,13 @@ export default function LandingPage() {
                 </div>
             </section>
 
+
+
             {/* Benefits & Social Proof */}
             <section style={{ background: 'hsl(var(--primary) / 0.03)', padding: '6rem 2rem' }}>
                 <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
                     <div style={{ display: 'none' }} className="responsive-flex">
-                         {/* Placeholder for responsive layout if needed. Using inline styles for simplicity here. */}
+                        {/* Placeholder for responsive layout if needed. Using inline styles for simplicity here. */}
                     </div>
                     {/* Inline media query style replacement via flex-wrap in actual css, but for simplicity we rely on grid layout */}
                     <style>{`
@@ -205,7 +377,7 @@ export default function LandingPage() {
                     <div className="split-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center', width: '100%' }}>
                         <div>
                             <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem', lineHeight: 1.2 }}>
-                                Designed for security <br/> and scale.
+                                Designed for security <br /> and scale.
                             </h2>
                             <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {[
@@ -249,9 +421,4 @@ export default function LandingPage() {
             </footer>
         </div>
     );
-}
-
-// target icon mockup component for feature 3
-function Target({size, color}) {
-    return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 }

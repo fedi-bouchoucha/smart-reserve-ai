@@ -486,3 +486,279 @@ p {
     flex-wrap: wrap;
   }
 }
+
+/* ============================================
+   PERFORMANCE ANALYTICS STYLES
+   ============================================ */
+
+/* Score Gauge */
+.score-gauge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-gauge svg {
+  transform: rotate(-90deg);
+}
+
+.score-gauge-label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-gauge-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-gauge-sublabel {
+  font-size: 0.625rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.125rem;
+}
+
+/* Large gauge variant */
+.score-gauge-lg .score-gauge-value {
+  font-size: 2.5rem;
+}
+
+.score-gauge-lg .score-gauge-sublabel {
+  font-size: 0.75rem;
+}
+
+/* Tier Badges */
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tier-top { background: hsl(142 76% 36% / 0.12); color: #10b981; }
+.tier-solid { background: hsl(262 83% 58% / 0.12); color: #6366f1; }
+.tier-improvement { background: hsl(38 92% 50% / 0.12); color: #f59e0b; }
+.tier-support { background: hsl(0 84% 60% / 0.12); color: #ef4444; }
+
+/* Trend Indicator */
+.trend-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+}
+
+.trend-improving { color: #10b981; background: hsl(142 76% 36% / 0.08); }
+.trend-stable { color: hsl(var(--muted-foreground)); background: hsl(var(--muted) / 0.5); }
+.trend-declining { color: #ef4444; background: hsl(0 84% 60% / 0.08); }
+
+/* Performance Cards */
+.perf-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.perf-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, transparent);
+  transition: background 0.3s ease;
+}
+
+.perf-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.12);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.perf-card:hover::before {
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.3));
+}
+
+.perf-card-top::before { background: linear-gradient(90deg, #10b981, #10b981aa) !important; }
+.perf-card-solid::before { background: linear-gradient(90deg, #6366f1, #6366f1aa) !important; }
+.perf-card-improvement::before { background: linear-gradient(90deg, #f59e0b, #f59e0baa) !important; }
+.perf-card-support::before { background: linear-gradient(90deg, #ef4444, #ef4444aa) !important; }
+
+/* Metric Bar */
+.metric-bar-track {
+  height: 6px;
+  width: 100%;
+  background: hsl(var(--muted));
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* AI Insight Cards */
+.insight-card {
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+}
+
+.insight-card-strength {
+  border-left: 3px solid #10b981;
+}
+
+.insight-card-risk {
+  border-left: 3px solid #f59e0b;
+}
+
+.insight-card-action {
+  border-left: 3px solid #6366f1;
+  background: hsl(var(--primary) / 0.03);
+}
+
+/* Team Health Ring */
+.team-health-ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-health-label {
+  position: absolute;
+  text-align: center;
+}
+
+.team-health-score {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, hsl(var(--primary)), #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.team-health-subtitle {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.25rem;
+}
+
+/* Glassmorphism Card Override */
+.glass-card {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+}
+
+/* Comparison Bar Chart */
+.comparison-bar {
+  height: 32px;
+  border-radius: var(--radius);
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-left: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+
+/* Sparkline mini chart area */
+.sparkline-container {
+  width: 100%;
+  height: 40px;
+}
+
+/* Performance Modal */
+.perf-modal {
+  max-width: 700px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.perf-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.perf-modal section {
+  margin-bottom: 1.5rem;
+}
+
+.perf-modal section h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.75rem;
+}
+
+/* Animated score entrance */
+@keyframes scoreCountUp {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.score-animated {
+  animation: scoreCountUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Comparison radar grid */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.metric-item-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.metric-item-value {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
