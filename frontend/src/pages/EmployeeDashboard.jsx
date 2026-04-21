@@ -16,7 +16,8 @@ import {
   CalendarDays,
   Clock,
   Users,
-  Trash2
+  Trash2,
+  History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -56,11 +57,8 @@ export default function EmployeeDashboard() {
     // === CHANGE REQUEST MODAL ===
     const [showChangeModal, setShowChangeModal] = useState(null);
     const [newChangeDate, setNewChangeDate] = useState('');
-    const [newChangeResourceType, setNewChangeResourceType] = useState('chair');
     const [newChangeChairId, setNewChangeChairId] = useState(null);
-    const [newChangeRoomId, setNewChangeRoomId] = useState(null);
     const [modalAvailableChairs, setModalAvailableChairs] = useState([]);
-    const [modalAvailableRooms, setModalAvailableRooms] = useState([]);
 
     useEffect(() => {
         if (message.text) {
@@ -79,7 +77,7 @@ export default function EmployeeDashboard() {
 
     useEffect(() => {
         if (showChangeModal && newChangeDate) loadModalAvailability();
-    }, [newChangeDate, newChangeResourceType, showChangeModal]);
+    }, [newChangeDate, showChangeModal]);
 
     // Load available desks when desk picker date changes
     useEffect(() => {
@@ -142,12 +140,8 @@ export default function EmployeeDashboard() {
 
     const loadModalAvailability = async () => {
         try {
-            const [chairRes, roomRes] = await Promise.all([
-                api.get(`/reservations/available/chairs/${newChangeDate}`),
-                api.get(`/reservations/available/rooms/${newChangeDate}`)
-            ]);
+            const chairRes = await api.get(`/reservations/available/chairs/${newChangeDate}`);
             setModalAvailableChairs(chairRes.data || []);
-            setModalAvailableRooms(roomRes.data || []);
         } catch (e) { console.error(e); }
     };
 
@@ -247,14 +241,13 @@ export default function EmployeeDashboard() {
             await api.post('/change-requests', { 
                 reservationId: showChangeModal.id, 
                 newDate: newChangeDate,
-                newChairId: newChangeResourceType === 'chair' ? newChangeChairId : null,
-                newMeetingRoomId: newChangeResourceType === 'room' ? newChangeRoomId : null
+                newChairId: newChangeChairId,
+                newMeetingRoomId: null
             });
             setMessage({ type: 'success', text: 'Change request sent to your manager!' });
             setShowChangeModal(null);
             setNewChangeDate('');
             setNewChangeChairId(null);
-            setNewChangeRoomId(null);
         } catch (e) {
             setMessage({ type: 'error', text: e.response?.data?.error || 'Failed to send request' });
         }
@@ -390,9 +383,9 @@ export default function EmployeeDashboard() {
                         <table className="table-ui">
                             <thead><tr><th>Date</th><th>Workspace</th><th style={{ textAlign: 'right' }}>Action</th></tr></thead>
                             <tbody>
-                                {deskReservations.length === 0 ? (
-                                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '2.5rem', color: 'hsl(var(--muted-foreground))' }}>No desk bookings yet</td></tr>
-                                ) : deskReservations.map(r => (
+                                {deskReservations.filter(r => r.date >= new Date().toLocaleDateString('en-CA')).length === 0 ? (
+                                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '2.5rem', color: 'hsl(var(--muted-foreground))' }}>No active desk bookings</td></tr>
+                                ) : deskReservations.filter(r => r.date >= new Date().toLocaleDateString('en-CA')).map(r => (
                                     <tr key={r.id}>
                                         <td style={{ fontWeight: 600 }}>{r.date}</td>
                                         <td>
@@ -418,35 +411,7 @@ export default function EmployeeDashboard() {
                         </table>
                     </div>
 
-                    {/* Meeting Room Bookings */}
-                    <div className="card-modern" style={{ padding: 0 }}>
-                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ width: 36, height: 36, borderRadius: '0.5rem', background: 'hsl(142.1 76.2% 36.3% / 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Building2 size={18} style={{ color: 'hsl(142.1, 76.2%, 36.3%)' }} />
-                            </div>
-                            <div>
-                                <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Meeting Room Bookings</h3>
-                                <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>{meetingRoomBookings.length} active booking{meetingRoomBookings.length !== 1 ? 's' : ''}</p>
-                            </div>
-                        </div>
-                        <table className="table-ui">
-                            <thead><tr><th>Date</th><th>Room</th><th>Time</th><th style={{ textAlign: 'right' }}>Action</th></tr></thead>
-                            <tbody>
-                                {meetingRoomBookings.length === 0 ? (
-                                    <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2.5rem', color: 'hsl(var(--muted-foreground))' }}>No meeting room bookings yet</td></tr>
-                                ) : meetingRoomBookings.map(r => (
-                                    <tr key={r.id}>
-                                        <td style={{ fontWeight: 600 }}>{r.date}</td>
-                                        <td><div className="badge-ui badge-success">🏢 {r.meetingRoomName}</div></td>
-                                        <td style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>{r.startTime?.substring(0,5)} — {r.endTime?.substring(0,5)}</td>
-                                        <td style={{ textAlign: 'right' }}>
-                                            <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDeleteReservation(r.id)}>Cancel</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+
 
                     {/* Days Off */}
                     <div className="card-modern" style={{ padding: 0 }}>
@@ -476,6 +441,7 @@ export default function EmployeeDashboard() {
                             </tbody>
                         </table>
                     </div>
+
                 </div>
             )}
 
@@ -744,24 +710,19 @@ export default function EmployeeDashboard() {
                             </div>
 
                             <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                <label className="form-label">Resource Type</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
-                                    <button className={`btn-ui btn-sm ${newChangeResourceType === 'chair' ? 'btn-primary' : 'btn-outline'}`} onClick={() => { setNewChangeResourceType('chair'); setNewChangeRoomId(null); }}>Desk</button>
-                                    <button className={`btn-ui btn-sm ${newChangeResourceType === 'room' ? 'btn-primary' : 'btn-outline'}`} onClick={() => { setNewChangeResourceType('room'); setNewChangeChairId(null); }}>Room</button>
-                                </div>
-
+                                <label className="form-label">Select a Desk</label>
                                 <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem', padding: '0.5rem' }}>
                                     {!newChangeDate ? (
                                         <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: '1rem' }}>Select a date first</div>
-                                    ) : (newChangeResourceType === 'chair' ? modalAvailableChairs : modalAvailableRooms).length === 0 ? (
-                                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: '1rem' }}>No resources available</div>
-                                    ) : (newChangeResourceType === 'chair' ? modalAvailableChairs : modalAvailableRooms).map(r => (
+                                    ) : modalAvailableChairs.length === 0 ? (
+                                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: '1rem' }}>No desks available</div>
+                                    ) : modalAvailableChairs.map(r => (
                                         <div key={r.id}
-                                            className={`resource-card ${(newChangeResourceType === 'chair' ? newChangeChairId : newChangeRoomId) === r.id ? 'selected' : ''}`}
-                                            onClick={() => newChangeResourceType === 'chair' ? setNewChangeChairId(r.id) : setNewChangeRoomId(r.id)}
+                                            className={`resource-card ${newChangeChairId === r.id ? 'selected' : ''}`}
+                                            onClick={() => setNewChangeChairId(r.id)}
                                             style={{ padding: '0.5rem', fontSize: '0.85rem' }}
                                         >
-                                            <div style={{ fontWeight: 600 }}>{newChangeResourceType === 'chair' ? `Desk ${r.number}` : r.name}</div>
+                                            <div style={{ fontWeight: 600 }}>Desk {r.number}</div>
                                             <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Floor {r.floor}</div>
                                         </div>
                                     ))}
@@ -772,7 +733,7 @@ export default function EmployeeDashboard() {
                             
                             <div className="modal-actions" style={{ marginTop: '2rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
                                 <button className="btn-ui btn-ghost" onClick={() => setShowChangeModal(null)}>Cancel</button>
-                                <button className="btn-ui btn-primary" onClick={handleChangeRequest} disabled={loading || !newChangeDate || (!newChangeChairId && !newChangeRoomId)}>
+                                <button className="btn-ui btn-primary" onClick={handleChangeRequest} disabled={loading || !newChangeDate || !newChangeChairId}>
                                     {loading ? 'Sending...' : 'Submit Request'}
                                 </button>
                             </div>

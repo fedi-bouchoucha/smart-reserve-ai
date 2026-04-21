@@ -9,7 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
@@ -17,10 +19,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationService notificationService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.notificationService = notificationService;
     }
 
     public UserResponse findByUsername(String username) {
@@ -72,8 +76,11 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+    public void archiveUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setArchived(true);
+        userRepository.save(user);
     }
 
     @Transactional
@@ -110,9 +117,56 @@ public class UserService {
     }
 
     @Transactional
-    public void resetPassword(String username, String newPassword) {
-        User user = userRepository.findByUsername(username)
+    public void generateResetCode(String email) {
+        if (email != null) email = email.trim();
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String code = String.format("%06d", new Random().nextInt(1000000));
+        user.setResetCode(code);
+        user.setResetCodeExpiresAt(LocalDateTime.now().plusMinutes(10));
+        userRepository.save(user);
+
+        notificationService.sendEmailNotification(user, "Password Reset Code", 
+            "Your password reset code is: <b>" + code + "</b>. It will expire in 10 minutes.");
+    }
+
+    public boolean verifyResetCode(String email, String code) {
+        if (email != null) email = email.trim();
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return user.getResetCode() != null && 
+               user.getResetCode().equals(code) && 
+               user.getResetCodeExpiresAt() != null && 
+               user.getResetCodeExpiresAt().isAfter(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void resetPassword(String email, String newPassword, String code) {
+        if (email != null) email = email.trim();
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (!verifyResetCode(email, code)) {
+            throw new RuntimeException("Invalid or expired reset code");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetCode(null);
+        user.setResetCodeExpiresAt(null);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
@@ -127,6 +181,7 @@ public class UserService {
                 .role(user.getRole().name())
                 .managerId(user.getManager() != null ? user.getManager().getId() : null)
                 .managerName(user.getManager() != null ? user.getManager().getFullName() : null)
+                .archived(Boolean.TRUE.equals(user.isArchived()))
                 .build();
     }
 }

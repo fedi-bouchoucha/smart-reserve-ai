@@ -35,33 +35,45 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeUsers() {
-        if (userRepository.count() > 0) return;
-
         // Create Admin
-        User admin = userRepository.save(User.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("admin123"))
-                .fullName("System Admin")
-                .email("admin@office.com")
-                .role(Role.ADMIN)
-                .build());
+        if (!userRepository.findByUsername("admin").isPresent()) {
+            userRepository.save(User.builder()
+                    .username("admin")
+                    .password(passwordEncoder.encode("admin123"))
+                    .fullName("System Admin")
+                    .email("admin@office.com")
+                    .role(Role.ADMIN)
+                    .build());
+        }
 
         // Create Managers
-        User manager1 = userRepository.save(User.builder()
-                .username("manager1")
-                .password(passwordEncoder.encode("manager123"))
-                .fullName("Alice Martin")
-                .email("alice.martin@office.com")
-                .role(Role.MANAGER)
-                .build());
+        User manager1 = userRepository.findByUsername("manager1").orElse(null);
+        if (manager1 == null) {
+            manager1 = userRepository.save(User.builder()
+                    .username("manager1")
+                    .password(passwordEncoder.encode("manager123"))
+                    .fullName("Alice Martin")
+                    .email("alice.martin@office.com")
+                    .role(Role.MANAGER)
+                    .build());
+        } else if (manager1.getEmail() == null) {
+            manager1.setEmail("alice.martin@office.com");
+            userRepository.save(manager1);
+        }
 
-        User manager2 = userRepository.save(User.builder()
-                .username("manager2")
-                .password(passwordEncoder.encode("manager123"))
-                .fullName("Bob Johnson")
-                .email("bob.johnson@office.com")
-                .role(Role.MANAGER)
-                .build());
+        User manager2 = userRepository.findByUsername("manager2").orElse(null);
+        if (manager2 == null) {
+            manager2 = userRepository.save(User.builder()
+                    .username("manager2")
+                    .password(passwordEncoder.encode("manager123"))
+                    .fullName("Bob Johnson")
+                    .email("bob.johnson@office.com")
+                    .role(Role.MANAGER)
+                    .build());
+        } else if (manager2.getEmail() == null) {
+            manager2.setEmail("bob.johnson@office.com");
+            userRepository.save(manager2);
+        }
 
         // Create Employees
         String[] firstNames = { "Charlie", "Diana", "Edward", "Fiona", "George",
@@ -71,14 +83,23 @@ public class DataInitializer implements CommandLineRunner {
 
         for (int i = 0; i < 10; i++) {
             User manager = (i < 5) ? manager1 : manager2;
-            userRepository.save(User.builder()
-                    .username("employee" + (i + 1))
-                    .password(passwordEncoder.encode("emp123"))
-                    .fullName(firstNames[i] + " " + lastNames[i])
-                    .email(firstNames[i].toLowerCase() + "." + lastNames[i].toLowerCase() + "@office.com")
-                    .role(Role.EMPLOYEE)
-                    .manager(manager)
-                    .build());
+            String username = "employee" + (i + 1);
+            String email = firstNames[i].toLowerCase() + "." + lastNames[i].toLowerCase() + "@office.com";
+            
+            User employee = userRepository.findByUsername(username).orElse(null);
+            if (employee == null) {
+                userRepository.save(User.builder()
+                        .username(username)
+                        .password(passwordEncoder.encode("emp123"))
+                        .fullName(firstNames[i] + " " + lastNames[i])
+                        .email(email)
+                        .role(Role.EMPLOYEE)
+                        .manager(manager)
+                        .build());
+            } else if (employee.getEmail() == null) {
+                employee.setEmail(email);
+                userRepository.save(employee);
+            }
         }
     }
 

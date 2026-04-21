@@ -98,7 +98,7 @@ public class AutoAssignmentService {
 
                 // Get available chairs for this day
                 List<Chair> availableChairs = chairRepository.findAvailableChairs(
-                        workDay, defaultStart, defaultEnd);
+                        workDay, defaultStart, defaultEnd, Arrays.asList(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_APPROVAL, ReservationStatus.AUTO_ASSIGNED));
 
                 if (availableChairs.isEmpty()) {
                     warnings.add("No available chairs on " + workDay + " for " + employee.getFullName());

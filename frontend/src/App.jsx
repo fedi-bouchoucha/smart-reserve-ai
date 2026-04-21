@@ -8,6 +8,7 @@ import AdminAnalyticsDashboard from './pages/AdminAnalyticsDashboard';
 import PerformanceAnalytics from './pages/PerformanceAnalytics';
 import Profile from './pages/Profile';
 import MeetingRoomBooking from './pages/MeetingRoomBooking';
+import ForgotPassword from './pages/ForgotPassword';
 import Layout from './components/Layout';
 
 import LandingPage from './pages/LandingPage';
@@ -36,6 +37,7 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     <Route path="/login" element={<Login />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/" element={<HomeRedirect />} />
                     <Route path="/employee" element={
                         <ProtectedRoute roles={['EMPLOYEE']}>

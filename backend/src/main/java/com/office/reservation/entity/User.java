@@ -1,6 +1,7 @@
 package com.office.reservation.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -37,10 +38,15 @@ public class User {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private List<User> employees;
 
+    private String resetCode;
+    private LocalDateTime resetCodeExpiresAt;
+
+    private Boolean archived = false;
+
     public User() {
     }
 
-    public User(Long id, String username, String password, String fullName, String email, String profilePicture, Role role, User manager) {
+    public User(Long id, String username, String password, String fullName, String email, String profilePicture, Role role, User manager, String resetCode, LocalDateTime resetCodeExpiresAt, Boolean archived) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -49,6 +55,9 @@ public class User {
         this.profilePicture = profilePicture;
         this.role = role;
         this.manager = manager;
+        this.resetCode = resetCode;
+        this.resetCodeExpiresAt = resetCodeExpiresAt;
+        this.archived = archived;
     }
 
     // Getters and Setters
@@ -124,6 +133,30 @@ public class User {
         this.employees = employees;
     }
 
+    public String getResetCode() {
+        return resetCode;
+    }
+
+    public void setResetCode(String resetCode) {
+        this.resetCode = resetCode;
+    }
+
+    public LocalDateTime getResetCodeExpiresAt() {
+        return resetCodeExpiresAt;
+    }
+
+    public void setResetCodeExpiresAt(LocalDateTime resetCodeExpiresAt) {
+        this.resetCodeExpiresAt = resetCodeExpiresAt;
+    }
+
+    public Boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
+    }
+
     // Builder
     public static UserBuilder builder() {
         return new UserBuilder();
@@ -138,6 +171,9 @@ public class User {
         private String profilePicture;
         private Role role;
         private User manager;
+        private String resetCode;
+        private LocalDateTime resetCodeExpiresAt;
+        private Boolean archived = false;
 
         public UserBuilder id(Long id) {
             this.id = id;
@@ -179,8 +215,23 @@ public class User {
             return this;
         }
 
+        public UserBuilder resetCode(String resetCode) {
+            this.resetCode = resetCode;
+            return this;
+        }
+
+        public UserBuilder resetCodeExpiresAt(LocalDateTime resetCodeExpiresAt) {
+            this.resetCodeExpiresAt = resetCodeExpiresAt;
+            return this;
+        }
+
+        public UserBuilder archived(Boolean archived) {
+            this.archived = archived;
+            return this;
+        }
+
         public User build() {
-            return new User(id, username, password, fullName, email, profilePicture, role, manager);
+            return new User(id, username, password, fullName, email, profilePicture, role, manager, resetCode, resetCodeExpiresAt, archived);
         }
     }
 }

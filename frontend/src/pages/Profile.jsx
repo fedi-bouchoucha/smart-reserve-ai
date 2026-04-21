@@ -24,7 +24,13 @@ export default function Profile() {
     });
     const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
+    const [passwordLoading, setPasswordLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    
+    // Password change state
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
+    const [passwordError, setPasswordError] = useState('');
 
     useEffect(() => {
         if (message.text) {
@@ -73,6 +79,34 @@ export default function Profile() {
             setMessage({ type: 'error', text: err.response?.data?.error || 'Update failed' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setPasswordError('');
+        if (passwords.newPassword !== passwords.confirmPassword) {
+            setPasswordError('New passwords do not match');
+            return;
+        }
+        if (passwords.newPassword.length < 6) {
+            setPasswordError('Password must be at least 6 characters');
+            return;
+        }
+
+        setPasswordLoading(true);
+        try {
+            await api.post('/auth/change-password', {
+                oldPassword: passwords.oldPassword,
+                newPassword: passwords.newPassword
+            });
+            setMessage({ type: 'success', text: 'Password changed successfully!' });
+            setShowPasswordModal(false);
+            setPasswords({ oldPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (err) {
+            setPasswordError(err.response?.data?.error || 'Failed to change password. Is your old password correct?');
+        } finally {
+            setPasswordLoading(false);
         }
     };
 
@@ -239,13 +273,87 @@ export default function Profile() {
                     <span>Security & Privacy</span>
                 </h3>
                 <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
-                    Need to change your password or manage security settings? Contact your system administrator.
+                    Keep your account secure by regularly updating your password.
                 </p>
-                <button className="btn-ui btn-outline" disabled style={{ opacity: 0.5 }}>
+                <button className="btn-ui btn-outline" onClick={() => setShowPasswordModal(true)}>
                     <Key size={16} />
-                    <span>Request Password Reset</span>
+                    <span>Change Password</span>
                 </button>
             </div>
+
+            {/* Change Password Modal */}
+            <AnimatePresence>
+                {showPasswordModal && (
+                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowPasswordModal(false)}>
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="modal-content modal-modern-content" 
+                            onClick={e => e.stopPropagation()} 
+                            style={{ maxWidth: '400px' }}
+                        >
+                            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                                <div style={{ background: 'hsl(var(--destructive) / 0.1)', color: 'hsl(var(--destructive))', width: '3rem', height: '3rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                    <Key size={24} />
+                                </div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Change Password</h2>
+                                <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>Update your security credentials</p>
+                            </div>
+
+                            {passwordError && (
+                                <div className="alert alert-error" style={{ marginBottom: '1.5rem', fontSize: '0.8rem' }}>
+                                    <AlertCircle size={16} />
+                                    <span>{passwordError}</span>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleChangePassword}>
+                                <div className="form-group">
+                                    <label className="form-label">Current Password</label>
+                                    <input 
+                                        type="password" 
+                                        className="input-modern" 
+                                        value={passwords.oldPassword}
+                                        onChange={e => setPasswords({ ...passwords, oldPassword: e.target.value })}
+                                        required 
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">New Password</label>
+                                    <input 
+                                        type="password" 
+                                        className="input-modern" 
+                                        value={passwords.newPassword}
+                                        onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })}
+                                        required 
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: '2rem' }}>
+                                    <label className="form-label">Confirm New Password</label>
+                                    <input 
+                                        type="password" 
+                                        className="input-modern" 
+                                        value={passwords.confirmPassword}
+                                        onChange={e => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                                        required 
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <div className="modal-actions">
+                                    <button type="button" className="btn-ui btn-ghost" onClick={() => setShowPasswordModal(false)}>Cancel</button>
+                                    <button type="submit" className="btn-ui btn-primary" disabled={passwordLoading}>
+                                        {passwordLoading ? 'Updating…' : 'Update Password'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

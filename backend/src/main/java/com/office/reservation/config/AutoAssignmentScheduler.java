@@ -4,6 +4,7 @@ import com.office.reservation.dto.AutoAssignmentResponse;
 import com.office.reservation.service.AutoAssignmentService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,9 +20,11 @@ import java.time.YearMonth;
 public class AutoAssignmentScheduler {
 
     private final AutoAssignmentService autoAssignmentService;
+    private final JdbcTemplate jdbcTemplate;
 
-    public AutoAssignmentScheduler(AutoAssignmentService autoAssignmentService) {
+    public AutoAssignmentScheduler(AutoAssignmentService autoAssignmentService, JdbcTemplate jdbcTemplate) {
         this.autoAssignmentService = autoAssignmentService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
@@ -38,6 +41,13 @@ public class AutoAssignmentScheduler {
     @EventListener(ApplicationReadyEvent.class)
     public void runOnStartup() {
         System.out.println("=== STARTUP CHECK: AUTO-ASSIGNMENT ===");
+        try {
+            jdbcTemplate.execute("ALTER TABLE reservations DROP CONSTRAINT IF EXISTS reservations_status_check");
+            jdbcTemplate.execute("ALTER TABLE reservations DROP CONSTRAINT IF EXISTS reservations_status_check1");
+            System.out.println("=== DB CONSTRAINTS FIXED ===");
+        } catch (Exception e) {
+            System.err.println("Could not drop constraints: " + e.getMessage());
+        }
         checkAndRun();
     }
 

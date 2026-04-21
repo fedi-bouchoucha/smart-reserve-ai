@@ -70,20 +70,6 @@ export default function ManagerDashboard() {
         setLoading(false);
     };
 
-    const handleDeleteReservation = async (resId) => {
-        if (!window.confirm('Delete this employee reservation?')) return;
-        setLoading(true);
-        try {
-            await api.delete(`/manager/reservations/${resId}`);
-            setMessage({ type: 'success', text: 'Reservation deleted' });
-            // Refresh list
-            loadEmployeeReservations(selectedEmployee);
-        } catch (e) {
-            setMessage({ type: 'error', text: 'Failed to delete' });
-        }
-        setLoading(false);
-    };
-
     const handleAction = async () => {
         if (!commentModal) return;
         setLoading(true);
@@ -97,6 +83,21 @@ export default function ManagerDashboard() {
             });
             setCommentModal(null);
             setComment('');
+            loadData();
+        } catch (e) {
+            setMessage({ type: 'error', text: e.response?.data?.error || 'Action failed' });
+        }
+        setLoading(false);
+    };
+
+    const handleDeskApproval = async (id, action) => {
+        setLoading(true);
+        try {
+            await api.post(`/manager/reservations/${id}/${action}`);
+            setMessage({
+                type: 'success',
+                text: `Desk reservation ${action === 'approve' ? 'approved' : 'rejected'} successfully!`
+            });
             loadData();
         } catch (e) {
             setMessage({ type: 'error', text: e.response?.data?.error || 'Action failed' });
@@ -336,7 +337,7 @@ export default function ManagerDashboard() {
                                 ) : (
                                     <table className="table-ui">
                                         <thead>
-                                            <tr><th>Date</th><th>Resource</th><th style={{ textAlign: 'right' }}>Action</th></tr>
+                                            <tr><th>Date</th><th>Resource</th></tr>
                                         </thead>
                                         <tbody>
                                             {empReservations.map(r => (
@@ -346,11 +347,6 @@ export default function ManagerDashboard() {
                                                         <div className="badge-ui badge-indigo">
                                                             {r.chairId ? '🪑 Desk' : '🏢 Room'}
                                                         </div>
-                                                    </td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDeleteReservation(r.id)}>
-                                                            <Trash2 size={16} />
-                                                        </button>
                                                     </td>
                                                 </tr>
                                             ))}

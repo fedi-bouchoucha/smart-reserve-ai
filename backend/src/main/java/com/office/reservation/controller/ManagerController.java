@@ -48,21 +48,6 @@ public class ManagerController {
         return ResponseEntity.ok(reservationService.getUserReservations(id));
     }
 
-    @DeleteMapping("/reservations/{id}")
-    public ResponseEntity<?> deleteUserReservation(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
-        User manager = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Manager not found"));
-        
-        com.office.reservation.entity.Reservation res = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
-
-        if (res.getUser().getManager() == null || (!res.getUser().getManager().getId().equals(manager.getId()) && !manager.getRole().name().equals("ADMIN"))) {
-            return ResponseEntity.status(403).body(Map.of("error", "Unauthorized to delete this reservation."));
-        }
-        
-        reservationRepository.delete(res);
-        return ResponseEntity.ok(Map.of("message", "Reservation deleted successfully."));
-    }
 
     @GetMapping("/employees")
     public ResponseEntity<?> getMyEmployees(@AuthenticationPrincipal UserDetails userDetails) {

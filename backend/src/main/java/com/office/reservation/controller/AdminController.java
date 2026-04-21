@@ -73,11 +73,11 @@ public class AdminController {
         }
     }
 
-    @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    @PutMapping("/users/{id}/archive")
+    public ResponseEntity<?> archiveUser(@PathVariable Long id) {
         try {
-            userService.deleteUser(id);
-            return ResponseEntity.ok(Map.of("message", "User deleted"));
+            userService.archiveUser(id);
+            return ResponseEntity.ok(Map.of("message", "User archived successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -114,25 +114,7 @@ public class AdminController {
         return ResponseEntity.ok(changeRequestService.getAllChangeRequests());
     }
 
-    @DeleteMapping("/reservations/{id}")
-    public ResponseEntity<?> deleteReservation(@PathVariable Long id) {
-        try {
-            reservationRepository.deleteById(id);
-            return ResponseEntity.ok(Map.of("message", "Reservation deleted"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
 
-    @DeleteMapping("/change-requests/{id}")
-    public ResponseEntity<?> deleteChangeRequest(@PathVariable Long id) {
-        try {
-            changeRequestRepository.deleteById(id);
-            return ResponseEntity.ok(Map.of("message", "Change request deleted"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
 
     /**
      * Auto-assign random chairs to employees who didn't reserve during the booking window (1st-20th).

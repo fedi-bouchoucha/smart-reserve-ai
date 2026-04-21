@@ -9,12 +9,13 @@ public class UserResponse {
     private String role;
     private Long managerId;
     private String managerName;
+    private boolean archived;
 
     public UserResponse() {
     }
 
     public UserResponse(Long id, String username, String fullName, String email, String profilePicture, String role, Long managerId,
-            String managerName) {
+            String managerName, boolean archived) {
         this.id = id;
         this.username = username;
         this.fullName = fullName;
@@ -23,6 +24,7 @@ public class UserResponse {
         this.role = role;
         this.managerId = managerId;
         this.managerName = managerName;
+        this.archived = archived;
     }
 
     public Long getId() {
@@ -89,6 +91,14 @@ public class UserResponse {
         this.managerName = managerName;
     }
 
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
+    }
+
     public static UserResponseBuilder builder() {
         return new UserResponseBuilder();
     }
@@ -102,6 +112,7 @@ public class UserResponse {
         private String role;
         private Long managerId;
         private String managerName;
+        private boolean archived;
 
         public UserResponseBuilder id(Long id) {
             this.id = id;
@@ -143,8 +154,13 @@ public class UserResponse {
             return this;
         }
 
+        public UserResponseBuilder archived(boolean archived) {
+            this.archived = archived;
+            return this;
+        }
+
         public UserResponse build() {
-            return new UserResponse(id, username, fullName, email, profilePicture, role, managerId, managerName);
+            return new UserResponse(id, username, fullName, email, profilePicture, role, managerId, managerName, archived);
         }
     }
 }

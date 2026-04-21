@@ -38,6 +38,15 @@ public class NotificationService {
         notification.setType(Notification.NotificationType.EMAIL);
 
         try {
+            // DEBUG: Display code in console for development
+            System.out.println("==========================================================");
+            System.out.println("                DEBUG EMAIL NOTIFICATION");
+            System.out.println("==========================================================");
+            System.out.println("To: " + user.getEmail());
+            System.out.println("Subject: " + subject);
+            System.out.println("Body: " + body.replaceAll("<[^>]*>", "")); // Strip HTML for console
+            System.out.println("==========================================================");
+
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
@@ -50,7 +59,7 @@ public class NotificationService {
         } catch (Exception e) {
             notification.setStatus(Notification.NotificationStatus.FAILED);
             // In production, we'd log this properly or use a retry queue
-            System.err.println("Failed to send email: " + e.getMessage());
+            System.err.println("Email delivery failed (likely SMTP config). Check console debug above for the code.");
         }
         
         notificationRepository.save(notification);

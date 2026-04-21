@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import com.office.reservation.entity.ReservationStatus;
 
 @Component
 public class ConflictResolver {
@@ -25,7 +28,7 @@ public class ConflictResolver {
         List<SmartSchedulingDTO> alternatives = new ArrayList<>();
 
         // Strategy 1: Find available chairs at same time
-        chairRepository.findAvailableChairs(date, start, end).stream()
+        chairRepository.findAvailableChairs(date, start, end, Arrays.asList(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_APPROVAL, ReservationStatus.AUTO_ASSIGNED)).stream()
                 .limit(2)
                 .forEach(c -> alternatives.add(SmartSchedulingDTO.builder()
                         .type("RESOURCE_SWAP")

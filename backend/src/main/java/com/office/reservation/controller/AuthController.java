@@ -74,9 +74,35 @@ public class AuthController {
         return ResponseEntity.ok(userService.updateProfile(user.getId(), profileUpdate.get("fullName"), profileUpdate.get("email"), profileUpdate.get("profilePicture")));
     }
 
+    @PostMapping("/forgot-password/request")
+    public ResponseEntity<?> requestResetCode(@RequestBody Map<String, String> request) {
+        userService.generateResetCode(request.get("email"));
+        return ResponseEntity.ok(Map.of("message", "Reset code sent to your email"));
+    }
+
+    @PostMapping("/forgot-password/verify")
+    public ResponseEntity<?> verifyResetCode(@RequestBody Map<String, String> request) {
+        boolean valid = userService.verifyResetCode(request.get("email"), request.get("code"));
+        if (valid) {
+            return ResponseEntity.ok(Map.of("message", "Code verified"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired code"));
+        }
+    }
+
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> resetRequest) {
-        userService.resetPassword(resetRequest.get("username"), resetRequest.get("newPassword"));
+        userService.resetPassword(resetRequest.get("email"), resetRequest.get("newPassword"), resetRequest.get("code"));
         return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@AuthenticationPrincipal UserDetails userDetails,
+                                          @RequestBody Map<String, String> request) {
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        userService.changePassword(user.getId(), request.get("oldPassword"), request.get("newPassword"));
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
     }
 }

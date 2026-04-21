@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -247,7 +248,7 @@ public class ReservationService {
     }
 
     public List<Object> getAvailableChairs(LocalDate date) {
-        return chairRepository.findAvailableChairs(date, LocalTime.of(9,0), LocalTime.of(17,0)).stream().collect(Collectors.toList());
+        return chairRepository.findAvailableChairs(date, LocalTime.of(9,0), LocalTime.of(17,0), Arrays.asList(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_APPROVAL, ReservationStatus.AUTO_ASSIGNED)).stream().collect(Collectors.toList());
     }
 
     public List<Object> getAvailableRooms(LocalDate date) {

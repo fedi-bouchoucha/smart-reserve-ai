@@ -16,8 +16,12 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
+    profile_picture TEXT,
     role VARCHAR(50) NOT NULL, -- 'EMPLOYEE', 'MANAGER', 'ADMIN'
     manager_id BIGINT,
+    reset_code VARCHAR(255),
+    reset_code_expires_at TIMESTAMP,
+    archived BOOLEAN DEFAULT FALSE,
     CONSTRAINT fk_user_manager FOREIGN KEY (manager_id) REFERENCES users(id)
 );
 

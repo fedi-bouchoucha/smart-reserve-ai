@@ -8,7 +8,7 @@ import {
   BarChart3, 
   Plus, 
   RefreshCcw, 
-  Trash2, 
+  Archive, 
   Edit3,
   Search,
   CheckCircle2,
@@ -88,34 +88,17 @@ export default function AdminDashboard() {
         } catch (e) { console.error(e); }
     };
 
-    const handleDeleteUser = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this user?')) return;
+    const handleArchiveUser = async (id) => {
+        if (!window.confirm('Are you sure you want to archive this user? They will no longer be able to log in.')) return;
         try {
-            await api.delete(`/admin/users/${id}`);
-            setMessage({ type: 'success', text: 'User deleted successfully' });
+            await api.put(`/admin/users/${id}/archive`);
+            setMessage({ type: 'success', text: 'User archived successfully' });
             loadUsers();
             loadStats();
-        } catch (e) { setMessage({ type: 'error', text: 'Delete failed' }); }
+        } catch (e) { setMessage({ type: 'error', text: 'Archive failed' }); }
     };
 
-    const handleDeleteReservation = async (id) => {
-        if (!window.confirm('Cancel this reservation globally?')) return;
-        try {
-            await api.delete(`/admin/reservations/${id}`);
-            setMessage({ type: 'success', text: 'Reservation cancelled' });
-            loadReservations();
-            loadStats();
-        } catch (e) { setMessage({ type: 'error', text: 'Failed to cancel' }); }
-    };
 
-    const handleDeleteChangeRequest = async (id) => {
-        if (!window.confirm('Delete this change request?')) return;
-        try {
-            await api.delete(`/admin/change-requests/${id}`);
-            setMessage({ type: 'success', text: 'Request deleted' });
-            loadChangeRequests();
-        } catch (e) { setMessage({ type: 'error', text: 'Delete failed' }); }
-    };
 
     const handleSaveUser = async () => {
         setLoading(true);
@@ -280,9 +263,13 @@ export default function AdminDashboard() {
                                                 <button className="btn-ui btn-ghost btn-sm" onClick={() => { setEditingUser(u); setUserForm(u); setShowUserModal(true); }}>
                                                     <Edit3 size={16} />
                                                 </button>
-                                                <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDeleteUser(u.id)}>
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                {!u.archived ? (
+                                                    <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--warning))' }} onClick={() => handleArchiveUser(u.id)} title="Archive user">
+                                                        <Archive size={16} />
+                                                    </button>
+                                                ) : (
+                                                    <div className="badge-ui badge-danger" style={{ fontSize: '0.7rem' }}>Archived</div>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -295,7 +282,7 @@ export default function AdminDashboard() {
                 {tab === 'reservations' && (
                     <table className="table-ui">
                         <thead>
-                            <tr><th>User</th><th>Resource</th><th>Date</th><th>Status</th><th style={{ textAlign: 'right' }}>Actions</th></tr>
+                            <tr><th>User</th><th>Resource</th><th>Date</th><th>Status</th></tr>
                         </thead>
                         <tbody>
                             {reservations.map(r => (
@@ -308,11 +295,6 @@ export default function AdminDashboard() {
                                     </td>
                                     <td>{r.date}</td>
                                     <td><div className={`badge-ui ${r.status === 'CONFIRMED' ? 'badge-success' : r.status === 'AUTO_ASSIGNED' ? 'badge-indigo' : 'badge-warning'}`}>{r.status === 'AUTO_ASSIGNED' ? '🎲 Auto-Assigned' : r.status}</div></td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDeleteReservation(r.id)}>
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -322,7 +304,7 @@ export default function AdminDashboard() {
                 {tab === 'requests' && (
                     <table className="table-ui">
                         <thead>
-                            <tr><th>Requested By</th><th>From</th><th>To</th><th>Status</th><th style={{ textAlign: 'right' }}>Actions</th></tr>
+                            <tr><th>Requested By</th><th>From</th><th>To</th><th>Status</th></tr>
                         </thead>
                         <tbody>
                             {changeRequests.map(cr => (
@@ -334,11 +316,6 @@ export default function AdminDashboard() {
                                         <div className={`badge-ui ${cr.status === 'PENDING' ? 'badge-warning' : cr.status === 'APPROVED' ? 'badge-success' : 'badge-danger'}`}>
                                             {cr.status}
                                         </div>
-                                    </td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDeleteChangeRequest(cr.id)}>
-                                            <Trash2 size={16} />
-                                        </button>
                                     </td>
                                 </tr>
                             ))}
