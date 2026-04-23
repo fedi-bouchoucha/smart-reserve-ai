@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import OfficeMap from './OfficeMap';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -31,6 +32,7 @@ export default function EmployeeDashboard() {
     const [deskReservations, setDeskReservations] = useState([]);
     const [meetingRoomBookings, setMeetingRoomBookings] = useState([]);
     const [daysOff, setDaysOff] = useState([]);
+    const [homeOffices, setHomeOffices] = useState([]);
 
     // === UNIFIED CALENDAR STATE ===
     const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -90,14 +92,16 @@ export default function EmployeeDashboard() {
 
     const loadAllData = async () => {
         try {
-            const [deskRes, roomRes, daysOffRes] = await Promise.all([
+            const [deskRes, roomRes, daysOffRes, homeOfficesRes] = await Promise.all([
                 api.get('/reservations/my/desks'),
                 api.get('/reservations/my/meeting-rooms'),
-                api.get('/days-off/my')
+                api.get('/days-off/my'),
+                api.get('/reservations/my/home-offices')
             ]);
             setDeskReservations(deskRes.data || []);
             setMeetingRoomBookings(roomRes.data || []);
             setDaysOff(daysOffRes.data || []);
+            setHomeOffices(homeOfficesRes.data || []);
         } catch (e) { console.error(e); }
     };
 
@@ -149,7 +153,6 @@ export default function EmployeeDashboard() {
 
     const handlePickDesk = (chair) => {
         const date = showDeskPicker.date;
-        // Remove existing assignment for this date if any, then add new one
         setDeskAssignments(prev => [
             ...prev.filter(a => a.date !== date),
             { date, chairId: chair.id, chairNumber: chair.number, floor: chair.floor, emplacementName: chair.emplacementName || '' }
@@ -274,6 +277,17 @@ export default function EmployeeDashboard() {
             }
         } else {
             // DESK MODE — check availability first
+            
+            // Check for locally declared days off first for instant feedback
+            if (existingDaysOff.includes(ds) || selectedDaysOff.includes(ds)) {
+                setShowReasonModal({ 
+                    date: new Date(ds).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }), 
+                    reason: "You have a day off declared for this day.", 
+                    status: 'RESTRICTED' 
+                });
+                return;
+            }
+
             const st = calendarStatuses.find(s => s.date === ds);
             if (st && !st.available) {
                 setShowReasonModal({ date: new Date(ds).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }), reason: st.reason, status: st.status });
@@ -295,6 +309,7 @@ export default function EmployeeDashboard() {
 
         // Existing desk reservations
         deskReservations.forEach(r => {
+            if (r.status === 'PENDING_APPROVAL') return;
             const isAutoAssigned = r.status === 'AUTO_ASSIGNED';
             events.push({
                 title: `${isAutoAssigned ? '🎲' : '🪑'} ${(r.chairInfo?.split(' ')[1] || 'Desk')}`,
@@ -323,6 +338,14 @@ export default function EmployeeDashboard() {
             events.push({
                 title: '🏖️ Selected',
                 start: d, allDay: true, color: '#e91e63'
+            });
+        });
+
+        // Home offices
+        homeOffices.forEach(h => {
+            events.push({
+                title: '🏠 Home Office',
+                start: h.date, allDay: true, color: 'hsl(180, 70%, 45%)'
             });
         });
 
@@ -401,8 +424,8 @@ export default function EmployeeDashboard() {
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                <button className="btn-ui btn-outline btn-sm" disabled={r.status === 'PENDING_APPROVAL'} onClick={() => { setShowChangeModal(r); setNewChangeDate(''); }}>Change</button>
-                                                <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDeleteReservation(r.id)}>Cancel</button>
+                                                <button className="btn-ui btn-outline btn-sm" disabled={r.status === 'PENDING_APPROVAL' || r.status === 'AUTO_ASSIGNED'} onClick={() => { setShowChangeModal(r); setNewChangeDate(''); }}>Change</button>
+                                                <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} disabled={r.status === 'AUTO_ASSIGNED'} onClick={() => handleDeleteReservation(r.id)}>Cancel</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -649,46 +672,28 @@ export default function EmployeeDashboard() {
 
             {/* ==================== DESK PICKER MODAL ==================== */}
             <AnimatePresence>
-                {showDeskPicker && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowDeskPicker(null)}>
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9 }} className="modal-content modal-modern-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            {showDeskPicker && (
+                    <div className="modal-overlay modal-modern-overlay" style={{ zIndex: 1000 }} onClick={() => setShowDeskPicker(null)}>
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95 }}
+                            className="modal-content modal-modern-content"
+                            onClick={e => e.stopPropagation()}
+                            style={{ maxWidth: '95vw', width: '1200px', maxHeight: '90vh', overflow: 'auto', padding: '1.5rem' }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                 <div>
-                                    <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Choose a Desk</h2>
+                                    <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Select a Desk</h2>
                                     <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                                        {showDeskPicker.dateFormatted}
+                                        {showDeskPicker.dateFormatted} — Click a desk on the map, then select a chair
                                     </p>
                                 </div>
                                 <button className="btn-ui btn-ghost" style={{ padding: '0.25rem' }} onClick={() => setShowDeskPicker(null)}><X size={18} /></button>
                             </div>
-
-                            {pickerLoading ? (
-                                <div style={{ padding: '2rem', textAlign: 'center', color: 'hsl(var(--muted-foreground))' }}>Loading available desks...</div>
-                            ) : pickerChairs.length === 0 ? (
-                                <div style={{ padding: '2rem', textAlign: 'center', color: 'hsl(var(--muted-foreground))' }}>
-                                    <AlertCircle size={32} style={{ opacity: 0.4, marginBottom: '0.5rem' }} />
-                                    <p>No desks available for this date.</p>
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '350px', overflowY: 'auto' }}>
-                                    {pickerChairs.map(chair => {
-                                        const isCurrentlyAssigned = deskAssignments.some(a => a.date === showDeskPicker.date && a.chairId === chair.id);
-                                        return (
-                                            <div key={chair.id}
-                                                className={`resource-card ${isCurrentlyAssigned ? 'selected' : ''}`}
-                                                onClick={() => handlePickDesk(chair)}
-                                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                                            >
-                                                <div>
-                                                    <div style={{ fontWeight: 600 }}>Desk {chair.number}</div>
-                                                    <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Floor {chair.floor} • {chair.emplacementName || ''}</div>
-                                                </div>
-                                                {isCurrentlyAssigned && <CheckCircle2 size={18} style={{ color: 'hsl(var(--primary))' }} />}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                            <OfficeMap
+                                pickerMode={true}
+                                pickerDate={showDeskPicker.date}
+                                onChairSelected={(chair) => handlePickDesk(chair)}
+                                onClose={() => setShowDeskPicker(null)}
+                            />
                         </motion.div>
                     </div>
                 )}

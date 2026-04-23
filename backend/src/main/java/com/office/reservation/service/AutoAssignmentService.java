@@ -20,15 +20,18 @@ public class AutoAssignmentService {
     private final ReservationRepository reservationRepository;
     private final ChairRepository chairRepository;
     private final DayOffRepository dayOffRepository;
+    private final HomeOfficeRepository homeOfficeRepository;
 
     public AutoAssignmentService(UserRepository userRepository,
                                   ReservationRepository reservationRepository,
                                   ChairRepository chairRepository,
-                                  DayOffRepository dayOffRepository) {
+                                  DayOffRepository dayOffRepository,
+                                  HomeOfficeRepository homeOfficeRepository) {
         this.userRepository = userRepository;
         this.reservationRepository = reservationRepository;
         this.chairRepository = chairRepository;
         this.dayOffRepository = dayOffRepository;
+        this.homeOfficeRepository = homeOfficeRepository;
     }
 
     /**
@@ -62,13 +65,15 @@ public class AutoAssignmentService {
                 .findUserIdsWithDeskReservationsInRange(monthStart, monthEnd);
         Set<Long> reservedUserIds = new HashSet<>(usersWithReservations);
 
-        // 4. Split into: employees to auto-assign vs. skipped
+        // 4. Split into: employees to auto-assign vs. employees with reservations
         List<User> employeesToAssign = new ArrayList<>();
+        List<User> employeesWithReservations = new ArrayList<>();
         List<String> skippedEmployees = new ArrayList<>();
 
         for (User staff : allStaff) {
             if (reservedUserIds.contains(staff.getId())) {
-                skippedEmployees.add(staff.getFullName() + " (already has reservations)");
+                employeesWithReservations.add(staff);
+                skippedEmployees.add(staff.getFullName() + " (partial reservations - got Home Office)");
             } else {
                 employeesToAssign.add(staff);
             }
@@ -124,11 +129,39 @@ public class AutoAssignmentService {
             }
         }
 
+        // 6. For employees who DID reserve, fill remaining empty days with Home Office
+        int totalHomeOfficeAssigned = 0;
+        for (User employee : employeesWithReservations) {
+            for (LocalDate workDay : workingDays) {
+                // Skip if employee has a confirmed day off
+                if (dayOffRepository.existsByUserIdAndDateAndStatus(
+                        employee.getId(), workDay, ReservationStatus.CONFIRMED)) {
+                    continue;
+                }
+
+                // Skip if employee has ANY desk reservation for this day
+                if (reservationRepository.existsDeskReservationForUserAndDate(
+                        employee.getId(), workDay)) {
+                    continue;
+                }
+
+                // Skip if HomeOffice already exists
+                if (homeOfficeRepository.existsByUserIdAndDate(employee.getId(), workDay)) {
+                    continue;
+                }
+
+                HomeOffice homeOffice = new HomeOffice(employee, workDay);
+                homeOfficeRepository.save(homeOffice);
+                totalHomeOfficeAssigned++;
+            }
+        }
+
         return new AutoAssignmentResponse(
                 year,
                 month,
                 employeesToAssign.size(),
                 totalReservationsCreated,
+                totalHomeOfficeAssigned,
                 skippedEmployees,
                 warnings
         );

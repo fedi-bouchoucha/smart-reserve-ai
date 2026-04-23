@@ -8,6 +8,7 @@ import com.office.reservation.entity.User;
 import com.office.reservation.event.ReservationStatusChangedEvent;
 import com.office.reservation.exception.ReservationConflictException;
 import com.office.reservation.repository.*;
+import com.office.reservation.entity.HomeOffice;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,8 @@ public class ReservationService {
     private final ChairRepository chairRepository;
     private final MeetingRoomRepository meetingRoomRepository;
     private final UserRepository userRepository;
+    private final DayOffRepository dayOffRepository;
+    private final HomeOfficeRepository homeOfficeRepository;
     private final ConflictResolver conflictResolver;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -36,12 +39,16 @@ public class ReservationService {
                               ChairRepository chairRepository,
                               MeetingRoomRepository meetingRoomRepository,
                               UserRepository userRepository,
+                              DayOffRepository dayOffRepository,
+                              HomeOfficeRepository homeOfficeRepository,
                               ConflictResolver conflictResolver,
                               ApplicationEventPublisher eventPublisher) {
         this.reservationRepository = reservationRepository;
         this.chairRepository = chairRepository;
         this.meetingRoomRepository = meetingRoomRepository;
         this.userRepository = userRepository;
+        this.dayOffRepository = dayOffRepository;
+        this.homeOfficeRepository = homeOfficeRepository;
         this.conflictResolver = conflictResolver;
         this.eventPublisher = eventPublisher;
     }
@@ -53,6 +60,16 @@ public class ReservationService {
         LocalTime start = request.getStartTime() != null ? request.getStartTime() : LocalTime.of(9, 0);
         LocalTime end = request.getEndTime() != null ? request.getEndTime() : LocalTime.of(17, 0);
 
+        // Past time check
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        if (date.isBefore(today)) {
+            throw new RuntimeException("Cannot reserve a date in the past.");
+        }
+        if (date.isEqual(today) && start.isBefore(now)) {
+            throw new RuntimeException("Cannot reserve a past time slot.");
+        }
+
         // Weekends check
         if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
             throw new RuntimeException("Cannot reserve on weekends.");
@@ -60,8 +77,12 @@ public class ReservationService {
 
         // For desk (chair) reservations, check duplicate booking on same date
         if (request.getChairId() != null) {
-            if (reservationRepository.existsByUserIdAndDateAndStatusAndChairIsNotNull(userId, date, ReservationStatus.CONFIRMED)) {
-                throw new RuntimeException("You already have a confirmed desk reservation for this date.");
+            if (reservationRepository.existsDeskReservationForUserAndDate(userId, date)) {
+                throw new RuntimeException("You already have a desk reservation (confirmed or pending) for this date.");
+            }
+            if (dayOffRepository.existsByUserIdAndDateAndStatus(userId, date, ReservationStatus.CONFIRMED) ||
+                dayOffRepository.existsByUserIdAndDateAndStatus(userId, date, ReservationStatus.PENDING_APPROVAL)) {
+                throw new RuntimeException("You cannot reserve a desk on a day you have a declared day off (pending or confirmed).");
             }
         }
 
@@ -69,7 +90,6 @@ public class ReservationService {
 
         // Rule: 1st-20th Booking Window (Only for Desks)
         if (request.getChairId() != null) {
-            LocalDate today = LocalDate.now();
             YearMonth requestMonth = YearMonth.from(date);
             YearMonth currentMonth = YearMonth.from(today);
             
@@ -77,13 +97,28 @@ public class ReservationService {
                 throw new RuntimeException("You cannot reserve a desk for the current month. You must book in advance for a future month.");
             }
             
-            // If booking for next month, confirm only if today is <= 20
-            if (requestMonth.equals(currentMonth.plusMonths(1))) {
-                if (today.getDayOfMonth() > 20) {
-                    finalStatus = ReservationStatus.PENDING_APPROVAL;
+            // Rule: Only allow booking for the next month (applies ONLY to regular Employees)
+            if (user.getRole() == Role.EMPLOYEE) {
+                if (requestMonth.equals(currentMonth.plusMonths(1))) {
+                    if (today.getDayOfMonth() > 20) {
+                        finalStatus = ReservationStatus.PENDING_APPROVAL;
+                    }
+                } else {
+                    throw new RuntimeException("As an employee, you can only reserve a desk for the month immediately following the current month.");
                 }
             } else {
-                // Booking for 2+ months in advance is automatically pending manager approval
+                // Admins and Managers can book any future month, but it stays pending if it's too far ahead or past the 20th
+                if (requestMonth.equals(currentMonth.plusMonths(1)) && today.getDayOfMonth() > 20) {
+                    finalStatus = ReservationStatus.PENDING_APPROVAL;
+                } else if (requestMonth.isAfter(currentMonth.plusMonths(1))) {
+                    finalStatus = ReservationStatus.PENDING_APPROVAL;
+                }
+            }
+        }
+
+        // Rule: If replacing a Home Office day, it MUST be approved by manager
+        if (request.getChairId() != null && finalStatus == ReservationStatus.CONFIRMED) {
+            if (homeOfficeRepository.existsByUserIdAndDate(userId, date)) {
                 finalStatus = ReservationStatus.PENDING_APPROVAL;
             }
         }
@@ -140,6 +175,16 @@ public class ReservationService {
 
         if (request.getMeetingRoomId() == null) {
             throw new RuntimeException("Meeting room must be specified.");
+        }
+
+        // Past time check
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        if (request.getDate().isBefore(today)) {
+            throw new RuntimeException("Cannot book a meeting room for a past date.");
+        }
+        if (request.getDate().isEqual(today) && start.isBefore(now)) {
+            throw new RuntimeException("Cannot book a meeting room for a past time slot.");
         }
 
         // Only check: is the room available at this time?
@@ -210,6 +255,13 @@ public class ReservationService {
     public ReservationResponse updatePendingReservationStatus(Long id, ReservationStatus newStatus) {
         Reservation res = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
+        
+        // If approving a desk reservation, check if we need to remove a Home Office record
+        if (newStatus == ReservationStatus.CONFIRMED && res.getChair() != null) {
+            homeOfficeRepository.findByUserIdAndDate(res.getUser().getId(), res.getDate())
+                .ifPresent(ho -> homeOfficeRepository.delete(ho));
+        }
+
         res.setStatus(newStatus);
         return mapToResponse(reservationRepository.save(res));
     }
@@ -218,6 +270,10 @@ public class ReservationService {
     public void deleteReservation(Long userId, Long reservationId) {
         Reservation res = reservationRepository.findById(reservationId).orElseThrow();
         if (!res.getUser().getId().equals(userId)) throw new RuntimeException("Unauthorized");
+
+        if (res.getStatus() == ReservationStatus.AUTO_ASSIGNED) {
+            throw new RuntimeException("Auto-assigned reservations cannot be deleted by employees.");
+        }
 
         reservationRepository.delete(res);
 
@@ -287,11 +343,19 @@ public class ReservationService {
             if (d.getDayOfWeek() == DayOfWeek.SATURDAY || d.getDayOfWeek() == DayOfWeek.SUNDAY) {
                 out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Office closed (weekend)", percentage)); continue;
             }
-            if (reservationRepository.existsByUserIdAndDateAndStatus(userId, d, ReservationStatus.CONFIRMED)) {
-                out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "You already have a booking for this day.", percentage)); continue;
+            if (reservationRepository.existsDeskReservationForUserAndDate(userId, d)) {
+                out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "You already have a desk reservation for this day.", percentage)); continue;
             }
-            if (percentageWithBooking > 0.20) {
-                out.add(new CalendarStatusDTO(d, false, "CAPACITY_REACHED", "Office capacity reached (20% of employees).", percentage)); continue;
+            if (dayOffRepository.existsByUserIdAndDateAndStatus(userId, d, ReservationStatus.CONFIRMED) ||
+                dayOffRepository.existsByUserIdAndDateAndStatus(userId, d, ReservationStatus.PENDING_APPROVAL)) {
+                out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "You have a day off declared (pending or confirmed) for this day.", percentage)); continue;
+            }
+            // 5. Next month only restriction (Employees only)
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null && user.getRole() == Role.EMPLOYEE && resourceType != null && resourceType.equalsIgnoreCase("chair")) {
+                if (!YearMonth.from(d).equals(YearMonth.from(LocalDate.now()).plusMonths(1))) {
+                    out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk reservations are only allowed for the next month.", percentage)); continue;
+                }
             }
             if (resourceId != null && resourceType != null) {
                 boolean taken = resourceType.equalsIgnoreCase("chair")

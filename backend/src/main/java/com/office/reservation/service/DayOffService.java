@@ -21,10 +21,12 @@ public class DayOffService {
 
     private final DayOffRepository dayOffRepository;
     private final UserRepository userRepository;
+    private final com.office.reservation.repository.ReservationRepository reservationRepository;
 
-    public DayOffService(DayOffRepository dayOffRepository, UserRepository userRepository) {
+    public DayOffService(DayOffRepository dayOffRepository, UserRepository userRepository, com.office.reservation.repository.ReservationRepository reservationRepository) {
         this.dayOffRepository = dayOffRepository;
         this.userRepository = userRepository;
+        this.reservationRepository = reservationRepository;
     }
 
     /**
@@ -60,8 +62,13 @@ public class DayOffService {
                 throw new RuntimeException("Cannot mark weekends as days off — they are already non-working days.");
             }
 
+            if (date.isBefore(LocalDate.now())) {
+                throw new RuntimeException("Cannot declare a day off for a past date.");
+            }
+
             // Check if already exists
-            if (dayOffRepository.existsByUserIdAndDateAndStatus(userId, date, ReservationStatus.CONFIRMED)) {
+            if (dayOffRepository.existsByUserIdAndDateAndStatus(userId, date, ReservationStatus.CONFIRMED) ||
+                dayOffRepository.existsByUserIdAndDateAndStatus(userId, date, ReservationStatus.PENDING_APPROVAL)) {
                 continue; // Skip duplicates silently
             }
 
@@ -72,8 +79,12 @@ public class DayOffService {
             int maxDaysOff = workingDays / 2; // 50% means at most half the month can be off
 
             YearMonth ym = YearMonth.of(year, month);
-            long currentDaysOff = dayOffRepository.countByUserIdAndDateBetweenAndStatus(
+            long confirmedDaysOff = dayOffRepository.countByUserIdAndDateBetweenAndStatus(
                     userId, ym.atDay(1), ym.atEndOfMonth(), ReservationStatus.CONFIRMED);
+            long pendingDaysOff = dayOffRepository.countByUserIdAndDateBetweenAndStatus(
+                    userId, ym.atDay(1), ym.atEndOfMonth(), ReservationStatus.PENDING_APPROVAL);
+
+            long currentTotalDaysOff = confirmedDaysOff + pendingDaysOff;
 
             // Count how many of the remaining request dates fall in this same month
             long newDaysInSameMonth = request.getDates().stream()
@@ -81,14 +92,24 @@ public class DayOffService {
                     .filter(d -> !dayOffRepository.existsByUserIdAndDateAndStatus(userId, d, ReservationStatus.CONFIRMED))
                     .count();
 
-            if (currentDaysOff + newDaysInSameMonth > maxDaysOff) {
+            if (currentTotalDaysOff + newDaysInSameMonth > maxDaysOff) {
                 throw new RuntimeException(
                         String.format("Monthly Rule Violation: You can take at most %d days off in %s %d (%d working days). " +
-                                "You already have %d days off. You must be present at least 50%% of working days.",
-                                maxDaysOff, ym.getMonth().toString(), year, workingDays, currentDaysOff));
+                                "You already have %d (confirmed or pending) days off. You must be present at least 50%% of working days.",
+                                maxDaysOff, ym.getMonth().toString(), year, workingDays, currentTotalDaysOff));
+            }
+
+            // check if user already has a ROOM reservation for this date (confirmed)
+            // we annul desk reservations automatically, but room bookings might be part of a team meeting, so we warn instead?
+            // Actually, for consistency, let's just annul everything.
+            List<com.office.reservation.entity.Reservation> reservations = reservationRepository.findActiveByUserIdAndDate(userId, date);
+            for (com.office.reservation.entity.Reservation res : reservations) {
+                res.setStatus(ReservationStatus.CANCELLED);
+                reservationRepository.save(res);
             }
 
             DayOff dayOff = new DayOff(user, date);
+            dayOff.setStatus(ReservationStatus.PENDING_APPROVAL);
             dayOff = dayOffRepository.save(dayOff);
             responses.add(mapToResponse(dayOff));
         }
@@ -136,11 +157,33 @@ public class DayOffService {
     public MonthSummary getMonthSummary(Long userId, int year, int month) {
         int workingDays = getWorkingDaysInMonth(year, month);
         YearMonth ym = YearMonth.of(year, month);
-        long daysOff = dayOffRepository.countByUserIdAndDateBetweenAndStatus(
+        long confirmedDays = dayOffRepository.countByUserIdAndDateBetweenAndStatus(
                 userId, ym.atDay(1), ym.atEndOfMonth(), ReservationStatus.CONFIRMED);
+        long pendingDays = dayOffRepository.countByUserIdAndDateBetweenAndStatus(
+                userId, ym.atDay(1), ym.atEndOfMonth(), ReservationStatus.PENDING_APPROVAL);
+        long totalDaysOff = confirmedDays + pendingDays;
         int maxDaysOff = workingDays / 2;
-        double presencePercentage = workingDays > 0 ? (double)(workingDays - daysOff) / workingDays * 100 : 100;
-        return new MonthSummary(workingDays, (int) daysOff, maxDaysOff, presencePercentage);
+        double presencePercentage = workingDays > 0 ? (double)(workingDays - confirmedDays) / workingDays * 100 : 100;
+        return new MonthSummary(workingDays, (int) totalDaysOff, maxDaysOff, presencePercentage);
+    }
+
+    public List<DayOffResponse> getPendingDaysOffForManager(Long managerId) {
+        return dayOffRepository.findByStatusAndUser_Manager_Id(ReservationStatus.PENDING_APPROVAL, managerId)
+                .stream().map(this::mapToResponse).toList();
+    }
+
+    @Transactional
+    public DayOffResponse approveDayOff(Long id) {
+        DayOff d = dayOffRepository.findById(id).orElseThrow(() -> new RuntimeException("Day off not found"));
+        d.setStatus(ReservationStatus.CONFIRMED);
+        return mapToResponse(dayOffRepository.save(d));
+    }
+
+    @Transactional
+    public DayOffResponse rejectDayOff(Long id) {
+        DayOff d = dayOffRepository.findById(id).orElseThrow(() -> new RuntimeException("Day off not found"));
+        d.setStatus(ReservationStatus.CANCELLED);
+        return mapToResponse(dayOffRepository.save(d));
     }
 
     private DayOffResponse mapToResponse(DayOff d) {

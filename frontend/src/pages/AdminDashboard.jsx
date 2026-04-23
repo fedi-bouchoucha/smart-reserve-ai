@@ -423,7 +423,7 @@ export default function AdminDashboard() {
                                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
                                     This will randomly assign chairs for <strong>all working days</strong> of the selected month 
                                     to employees who <strong>did not reserve</strong> during the booking window (1st–20th). 
-                                    Employees with existing reservations or days off will be skipped.
+                                    For employees who did reserve, their remaining unbooked working days will be set to <strong>Home Office</strong>.
                                 </p>
                             </div>
 
@@ -453,20 +453,24 @@ export default function AdminDashboard() {
                                             <Zap size={18} style={{ color: 'hsl(var(--success))' }} />
                                             <span style={{ fontWeight: 700, color: 'hsl(var(--success))' }}>Assignment Complete</span>
                                         </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                                             <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
                                                 <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))' }}>{autoAssignResult.totalEmployeesProcessed}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employees Processed</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fully Assigned</div>
                                             </div>
                                             <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
                                                 <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--success))' }}>{autoAssignResult.totalReservationsCreated}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reservations Created</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desks Booked</div>
+                                            </div>
+                                            <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
+                                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(180, 70%, 45%)' }}>{autoAssignResult.totalHomeOfficeAssigned}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Home Offices</div>
                                             </div>
                                         </div>
 
                                         {autoAssignResult.skippedEmployees?.length > 0 && (
                                             <div style={{ marginTop: '1rem' }}>
-                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--muted-foreground))' }}>Skipped (already reserved):</div>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--muted-foreground))' }}>Partial Reservations:</div>
                                                 <div style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>
                                                     {autoAssignResult.skippedEmployees.map((e, i) => (
                                                         <div key={i} style={{ padding: '0.2rem 0' }}>• {e}</div>

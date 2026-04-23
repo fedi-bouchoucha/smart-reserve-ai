@@ -44,7 +44,8 @@ public class AutoAssignmentScheduler {
         try {
             jdbcTemplate.execute("ALTER TABLE reservations DROP CONSTRAINT IF EXISTS reservations_status_check");
             jdbcTemplate.execute("ALTER TABLE reservations DROP CONSTRAINT IF EXISTS reservations_status_check1");
-            System.out.println("=== DB CONSTRAINTS FIXED ===");
+            jdbcTemplate.execute("ALTER TABLE days_off DROP CONSTRAINT IF EXISTS days_off_status_check");
+            System.out.println("=== DB CONSTRAINTS FIXED (Reservations & Days Off) ===");
         } catch (Exception e) {
             System.err.println("Could not drop constraints: " + e.getMessage());
         }

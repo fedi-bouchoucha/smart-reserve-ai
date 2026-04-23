@@ -3,6 +3,7 @@ package com.office.reservation.controller;
 import com.office.reservation.dto.*;
 import com.office.reservation.entity.User;
 import com.office.reservation.exception.ReservationConflictException;
+import com.office.reservation.repository.HomeOfficeRepository;
 import com.office.reservation.repository.UserRepository;
 import com.office.reservation.service.RecommendationService;
 import com.office.reservation.service.ReservationService;
@@ -27,15 +28,18 @@ public class ReservationController {
     private final UserRepository userRepository;
     private final SmartSchedulingService smartSchedulingService;
     private final RecommendationService recommendationService;
+    private final HomeOfficeRepository homeOfficeRepository;
 
     public ReservationController(ReservationService reservationService,
                                 UserRepository userRepository,
                                 SmartSchedulingService smartSchedulingService,
-                                RecommendationService recommendationService) {
+                                RecommendationService recommendationService,
+                                HomeOfficeRepository homeOfficeRepository) {
         this.reservationService = reservationService;
         this.userRepository = userRepository;
         this.smartSchedulingService = smartSchedulingService;
         this.recommendationService = recommendationService;
+        this.homeOfficeRepository = homeOfficeRepository;
     }
 
     @PostMapping
@@ -156,6 +160,23 @@ public class ReservationController {
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(reservationService.getUserWeeklyReservationCounts(user.getId()));
+    }
+
+
+    @GetMapping("/my/home-offices")
+    @PreAuthorize("hasRole('EMPLOYEE') or hasRole('MANAGER')")
+    public ResponseEntity<?> getMyHomeOffices(@AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User user = userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            List<HomeOfficeResponse> responses = homeOfficeRepository.findByUserId(user.getId())
+                    .stream()
+                    .map(HomeOfficeResponse::new)
+                    .toList();
+            return ResponseEntity.ok(responses);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{id}")

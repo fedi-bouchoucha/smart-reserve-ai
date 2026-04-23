@@ -18,4 +18,6 @@ public interface DayOffRepository extends JpaRepository<DayOff, Long> {
     long countByUserIdAndDateBetweenAndStatus(Long userId, LocalDate start, LocalDate end, ReservationStatus status);
 
     Optional<DayOff> findByUserIdAndDate(Long userId, LocalDate date);
+
+    List<DayOff> findByStatusAndUser_Manager_Id(ReservationStatus status, Long managerId);
 }

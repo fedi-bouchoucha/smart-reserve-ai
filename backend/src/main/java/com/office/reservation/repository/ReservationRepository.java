@@ -66,4 +66,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     // Check if a user already has any desk reservation (any status) for a specific date
     @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.user.id = :userId AND r.date = :date AND r.chair IS NOT NULL AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED')")
     boolean existsDeskReservationForUserAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
+
+    @Query("SELECT r FROM Reservation r WHERE r.user.id = :userId AND r.date = :date AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED')")
+    List<Reservation> findActiveByUserIdAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
 }

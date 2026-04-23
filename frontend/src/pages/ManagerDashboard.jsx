@@ -24,6 +24,7 @@ export default function ManagerDashboard() {
     const [tab, setTab] = useState('requests');
     const [pendingRequests, setPendingRequests] = useState([]);
     const [deskApprovals, setDeskApprovals] = useState([]);
+    const [pendingDaysOff, setPendingDaysOff] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -46,14 +47,16 @@ export default function ManagerDashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [reqRes, empRes, deskRes] = await Promise.all([
+            const [reqRes, empRes, deskRes, dayOffRes] = await Promise.all([
                 api.get('/manager/change-requests'),
                 api.get('/manager/employees'),
-                api.get('/manager/pending-approvals')
+                api.get('/manager/pending-approvals'),
+                api.get('/manager/pending-days-off')
             ]);
             setPendingRequests(reqRes.data);
             setEmployees(empRes.data);
             setDeskApprovals(deskRes.data);
+            setPendingDaysOff(dayOffRes.data);
         } catch (e) { console.error(e); }
         setLoading(false);
     };
@@ -105,6 +108,21 @@ export default function ManagerDashboard() {
         setLoading(false);
     };
 
+    const handleDayOffAction = async (id, action) => {
+        setLoading(true);
+        try {
+            await api.post(`/manager/days-off/${id}/${action}`);
+            setMessage({
+                type: 'success',
+                text: `Day off request ${action === 'approve' ? 'approved' : 'rejected'} successfully!`
+            });
+            loadData();
+        } catch (e) {
+            setMessage({ type: 'error', text: e.response?.data?.error || 'Action failed' });
+        }
+        setLoading(false);
+    };
+
     return (
         <div className="animate-in">
             <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -134,7 +152,7 @@ export default function ManagerDashboard() {
                 )}
             </AnimatePresence>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
                 <div className="card-modern" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                     <div style={{ background: 'hsl(var(--warning) / 0.1)', padding: '0.75rem', borderRadius: '0.75rem', color: 'hsl(var(--warning))' }}>
                         <Calendar size={24} />
@@ -142,6 +160,15 @@ export default function ManagerDashboard() {
                     <div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{deskApprovals.length}</div>
                         <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase' }}>Late Bookings</div>
+                    </div>
+                </div>
+                <div className="card-modern" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{ background: 'hsl(280 80% 50% / 0.1)', padding: '0.75rem', borderRadius: '0.75rem', color: 'hsl(280 80% 50%)' }}>
+                        <Calendar size={24} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{pendingDaysOff.length}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase' }}>Day Off Req.</div>
                     </div>
                 </div>
                 <div className="card-modern" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }} data-testid="pending-requests-card">
@@ -170,6 +197,9 @@ export default function ManagerDashboard() {
                 </button>
                 <button className={`tab-btn ${tab === 'desk-approvals' ? 'active' : ''}`} onClick={() => setTab('desk-approvals')} data-testid="tab-desk-approvals">
                     <Calendar size={16} /> <span>Late Bookings</span>
+                </button>
+                <button className={`tab-btn ${tab === 'day-offs' ? 'active' : ''}`} onClick={() => setTab('day-offs')} data-testid="tab-day-offs">
+                    <AlertCircle size={16} /> <span>Day Offs</span>
                 </button>
                 <button className={`tab-btn ${tab === 'team' ? 'active' : ''}`} onClick={() => setTab('team')} data-testid="tab-team">
                     <Users size={16} /> <span>My Team</span>
@@ -269,6 +299,37 @@ export default function ManagerDashboard() {
                     </>
                 )}
 
+                {tab === 'day-offs' && (
+                    <>
+                        {pendingDaysOff.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '4rem' }}>
+                                <div style={{ background: 'hsl(var(--secondary))', width: '64px', height: '64px', borderRadius: '99px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'hsl(var(--muted-foreground))' }}><CheckCircle2 size={32} /></div>
+                                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>All Clear!</h3>
+                                <p style={{ color: 'hsl(var(--muted-foreground))' }}>No pending day off requests to review.</p>
+                            </div>
+                        ) : (
+                            <table className="table-ui">
+                                <thead>
+                                    <tr><th>Employee</th><th>Date Requested</th><th style={{ textAlign: 'right' }}>Decide</th></tr>
+                                </thead>
+                                <tbody>
+                                    {pendingDaysOff.map(doReq => (
+                                        <tr key={doReq.id}>
+                                            <td style={{ fontWeight: 600 }}>{doReq.userName}</td>
+                                            <td><div className="badge-ui" style={{ background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700 }}>{doReq.date}</div></td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                    <button className="btn-ui btn-primary btn-sm" onClick={() => handleDayOffAction(doReq.id, 'approve')}><Check size={16} /><span>Approve</span></button>
+                                                    <button className="btn-ui btn-outline btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleDayOffAction(doReq.id, 'reject')}><X size={16} /><span>Reject</span></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </>
+                )}
                 {tab === 'team' && (
                     <table className="table-ui">
                         <thead>

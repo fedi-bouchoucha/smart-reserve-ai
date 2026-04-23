@@ -104,14 +104,20 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeWorkspace() {
-        // Ensure exactly 80 emplacements numbered E01 to E80
-        for (int i = 1; i <= 80; i++) {
+        // Ensure exactly 20 emplacements numbered E01 to E20
+        for (int i = 1; i <= 20; i++) {
             String name = "E" + String.format("%02d", i);
-            if (emplacementRepository.findByName(name).isPresent()) {
+            int floor = 3; // The user wants only one floor named floor 3
+
+            Emplacement existingEmp = emplacementRepository.findByName(name).orElse(null);
+            if (existingEmp != null) {
+                if (existingEmp.getFloor() == null || existingEmp.getFloor() != floor) {
+                    existingEmp.setFloor(floor);
+                    emplacementRepository.save(existingEmp);
+                }
                 continue;
             }
 
-            int floor = (i - 1) / 20 + 1; // Floors 1-4, 20 emplacements each
             Emplacement emp = emplacementRepository.save(Emplacement.builder()
                     .name(name)
                     .floor(floor)
@@ -125,18 +131,27 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
         
-        System.out.println("=== Workspace Initialization Sync (80 Tables / 320 Chairs) ===");
+        System.out.println("=== Workspace Initialization Sync (20 Tables / 80 Chairs on Floor 3) ===");
     }
 
     private void initializeRooms() {
-        if (meetingRoomRepository.count() > 0) return;
+        if (meetingRoomRepository.count() > 0) {
+            // Update existing rooms to floor 3
+            meetingRoomRepository.findAll().forEach(room -> {
+                if (room.getFloor() == null || room.getFloor() != 3) {
+                    room.setFloor(3);
+                    meetingRoomRepository.save(room);
+                }
+            });
+            return;
+        }
 
         meetingRoomRepository.save(MeetingRoom.builder()
                 .name("Meeting Room")
                 .capacity(10)
-                .floor(1)
+                .floor(3)
                 .build());
 
-        System.out.println("=== Room Initialized (Meeting Room) ===");
+        System.out.println("=== Room Initialized (Meeting Room on Floor 3) ===");
     }
 }

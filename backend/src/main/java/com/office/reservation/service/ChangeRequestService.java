@@ -52,13 +52,22 @@ public class ChangeRequestService {
             throw new RuntimeException("You can only modify your own reservations");
         }
 
+        if (reservation.getStatus() == ReservationStatus.AUTO_ASSIGNED) {
+            throw new RuntimeException("Auto-assigned reservations cannot be changed by employees.");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         ChangeRequest cr = new ChangeRequest();
         cr.setReservation(reservation);
         cr.setRequestedBy(user);
-        cr.setNewDate(dto.getNewDate());
+        if (dto.getNewDate() != null) {
+            if (dto.getNewDate().isBefore(LocalDate.now())) {
+                throw new RuntimeException("Cannot change reservation to a past date.");
+            }
+            cr.setNewDate(dto.getNewDate());
+        }
         cr.setStatus(ChangeRequestStatus.PENDING);
 
         if (dto.getNewChairId() != null) {

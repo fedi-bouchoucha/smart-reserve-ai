@@ -1,8 +1,15 @@
 package com.office.reservation.controller;
 
+import com.office.reservation.dto.DayOffResponse;
+import com.office.reservation.dto.ReservationResponse;
+import com.office.reservation.entity.ReservationStatus;
 import com.office.reservation.entity.User;
+import com.office.reservation.repository.ReservationRepository;
 import com.office.reservation.repository.UserRepository;
 import com.office.reservation.service.ChangeRequestService;
+import com.office.reservation.service.DayOffService;
+import com.office.reservation.service.ReservationService;
+import com.office.reservation.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,20 +26,23 @@ public class ManagerController {
 
     private final ChangeRequestService changeRequestService;
     private final UserRepository userRepository;
-    private final com.office.reservation.service.UserService userService;
-    private final com.office.reservation.service.ReservationService reservationService;
-    private final com.office.reservation.repository.ReservationRepository reservationRepository;
+    private final UserService userService;
+    private final ReservationService reservationService;
+    private final ReservationRepository reservationRepository;
+    private final DayOffService dayOffService;
 
     public ManagerController(ChangeRequestService changeRequestService,
             UserRepository userRepository,
-            com.office.reservation.service.UserService userService,
-            com.office.reservation.service.ReservationService reservationService,
-            com.office.reservation.repository.ReservationRepository reservationRepository) {
+            UserService userService,
+            ReservationService reservationService,
+            ReservationRepository reservationRepository,
+            DayOffService dayOffService) {
         this.changeRequestService = changeRequestService;
         this.userRepository = userRepository;
         this.userService = userService;
         this.reservationService = reservationService;
         this.reservationRepository = reservationRepository;
+        this.dayOffService = dayOffService;
     }
 
     @GetMapping("/employees/{id}/reservations")
@@ -87,7 +97,7 @@ public class ManagerController {
     }
 
     @GetMapping("/pending-approvals")
-    public ResponseEntity<List<com.office.reservation.dto.ReservationResponse>> getPendingApprovals(
+    public ResponseEntity<List<ReservationResponse>> getPendingApprovals(
             @AuthenticationPrincipal UserDetails userDetails) {
         User manager = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -96,11 +106,24 @@ public class ManagerController {
 
     @PostMapping("/reservations/{id}/approve")
     public ResponseEntity<?> approveReservation(@PathVariable Long id) {
-        return ResponseEntity.ok(reservationService.updatePendingReservationStatus(id, com.office.reservation.entity.ReservationStatus.CONFIRMED));
+        return ResponseEntity.ok(reservationService.updatePendingReservationStatus(id, ReservationStatus.CONFIRMED));
     }
 
-    @PostMapping("/reservations/{id}/reject")
-    public ResponseEntity<?> rejectReservation(@PathVariable Long id) {
-        return ResponseEntity.ok(reservationService.updatePendingReservationStatus(id, com.office.reservation.entity.ReservationStatus.CANCELLED));
+    @GetMapping("/pending-days-off")
+    public ResponseEntity<List<DayOffResponse>> getPendingDaysOff(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User manager = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(dayOffService.getPendingDaysOffForManager(manager.getId()));
+    }
+
+    @PostMapping("/days-off/{id}/approve")
+    public ResponseEntity<?> approveDayOff(@PathVariable Long id) {
+        return ResponseEntity.ok(dayOffService.approveDayOff(id));
+    }
+
+    @PostMapping("/days-off/{id}/reject")
+    public ResponseEntity<?> rejectDayOff(@PathVariable Long id) {
+        return ResponseEntity.ok(dayOffService.rejectDayOff(id));
     }
 }

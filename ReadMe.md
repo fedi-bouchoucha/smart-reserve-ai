@@ -143,7 +143,7 @@ With the backend active, visit the interactive Swagger UI panel:
 
 ## 🚀 Future Improvements Roadmap
 
-- [ ] Interactive structural office map allowing spatial desk-clicking reservations.
+- [x] Interactive structural office map allowing spatial desk-clicking reservations.
 - [ ] Implement Redis server caching to offload intense analytical operations.
 
 ---

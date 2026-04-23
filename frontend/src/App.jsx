@@ -8,6 +8,7 @@ import AdminAnalyticsDashboard from './pages/AdminAnalyticsDashboard';
 import PerformanceAnalytics from './pages/PerformanceAnalytics';
 import Profile from './pages/Profile';
 import MeetingRoomBooking from './pages/MeetingRoomBooking';
+
 import ForgotPassword from './pages/ForgotPassword';
 import Layout from './components/Layout';
 
@@ -69,6 +70,7 @@ function App() {
                             <Layout><MeetingRoomBooking /></Layout>
                         </ProtectedRoute>
                     } />
+
                     <Route path="/profile" element={
                         <ProtectedRoute roles={['EMPLOYEE', 'MANAGER', 'ADMIN']}>
                             <Layout><Profile /></Layout>
