@@ -69,9 +69,10 @@ export default function Profile() {
             const res = await api.put('/auth/profile', {
                 fullName: form.fullName,
                 email: form.email,
-                profilePicture: form.profilePicture
+                profilePicture: form.profilePicture,
+                username: form.username
             });
-            const updatedUser = { ...user, fullName: res.data.fullName, email: res.data.email, profilePicture: res.data.profilePicture };
+            const updatedUser = { ...user, fullName: res.data.fullName, email: res.data.email, profilePicture: res.data.profilePicture, username: res.data.username };
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
@@ -199,6 +200,11 @@ export default function Profile() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.875rem' }}>@{user?.username}</span>
                         <div className="badge-ui badge-indigo">{user?.role}</div>
+                        {user?.targetAttendance && (
+                            <div className="badge-ui" style={{ background: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))' }}>
+                                Target: {user.targetAttendance}%
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -212,15 +218,16 @@ export default function Profile() {
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label className="form-label">Username (Read-only)</label>
+                        <label className="form-label">Username</label>
                         <div style={{ position: 'relative' }}>
                             <AtSign size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--muted-foreground))' }} />
                             <input
                                 type="text"
                                 className="input-modern"
                                 value={form.username}
-                                disabled
-                                style={{ paddingLeft: '38px', opacity: 0.6, cursor: 'not-allowed' }}
+                                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                                required
+                                style={{ paddingLeft: '38px' }}
                             />
                         </div>
                     </div>

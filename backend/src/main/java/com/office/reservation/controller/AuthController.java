@@ -53,6 +53,7 @@ public class AuthController {
                 .profilePicture(user.getProfilePicture())
                 .role(user.getRole().name())
                 .userId(user.getId())
+                .targetAttendance(user.getTargetAttendance())
                 .build());
     }
 
@@ -71,7 +72,7 @@ public class AuthController {
                                                     @RequestBody Map<String, String> profileUpdate) {
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(userService.updateProfile(user.getId(), profileUpdate.get("fullName"), profileUpdate.get("email"), profileUpdate.get("profilePicture")));
+        return ResponseEntity.ok(userService.updateProfile(user.getId(), profileUpdate.get("fullName"), profileUpdate.get("email"), profileUpdate.get("profilePicture"), profileUpdate.get("username")));
     }
 
     @PostMapping("/forgot-password/request")

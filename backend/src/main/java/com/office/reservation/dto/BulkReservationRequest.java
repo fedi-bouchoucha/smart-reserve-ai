@@ -6,6 +6,7 @@ import java.util.List;
 
 public class BulkReservationRequest {
     private Long chairId;
+    private List<Long> chairIds;
     private Long meetingRoomId;
     private List<LocalDate> dates;
     private LocalTime startTime;
@@ -14,8 +15,9 @@ public class BulkReservationRequest {
     public BulkReservationRequest() {
     }
 
-    public BulkReservationRequest(Long chairId, Long meetingRoomId, List<LocalDate> dates, LocalTime startTime, LocalTime endTime) {
+    public BulkReservationRequest(Long chairId, List<Long> chairIds, Long meetingRoomId, List<LocalDate> dates, LocalTime startTime, LocalTime endTime) {
         this.chairId = chairId;
+        this.chairIds = chairIds;
         this.meetingRoomId = meetingRoomId;
         this.dates = dates;
         this.startTime = startTime;
@@ -28,6 +30,14 @@ public class BulkReservationRequest {
 
     public void setChairId(Long chairId) {
         this.chairId = chairId;
+    }
+
+    public List<Long> getChairIds() {
+        return chairIds;
+    }
+
+    public void setChairIds(List<Long> chairIds) {
+        this.chairIds = chairIds;
     }
 
     public Long getMeetingRoomId() {

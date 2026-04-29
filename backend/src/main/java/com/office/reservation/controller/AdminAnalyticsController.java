@@ -35,6 +35,8 @@ public class AdminAnalyticsController {
         return ResponseEntity.ok(analyticsService.getOverview());
     }
 
+
+
     @GetMapping("/usage-trends")
     public ResponseEntity<List<Map<String, Object>>> getUsageTrends() {
         return ResponseEntity.ok(analyticsService.getUsageTrends());

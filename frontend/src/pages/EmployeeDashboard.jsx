@@ -167,34 +167,20 @@ export default function EmployeeDashboard() {
     const handleDeskReserveAll = async () => {
         if (deskAssignments.length === 0) return;
         setLoading(true);
-        let successCount = 0;
-        let errorMsg = '';
         try {
-            for (const assignment of deskAssignments) {
-                try {
-                    await api.post('/reservations', {
-                        chairId: assignment.chairId,
-                        meetingRoomId: null,
-                        date: assignment.date,
-                        startTime: '09:00',
-                        endTime: '17:00'
-                    });
-                    successCount++;
-                } catch (e) {
-                    const msg = e.response?.data?.error || `Failed for ${assignment.date}`;
-                    errorMsg += (errorMsg ? '; ' : '') + msg;
-                }
-            }
-            if (successCount > 0) {
-                setMessage({ type: 'success', text: `${successCount} desk reservation${successCount !== 1 ? 's' : ''} created!${errorMsg ? ' Some failed: ' + errorMsg : ''}` });
-            } else {
-                setMessage({ type: 'error', text: errorMsg || 'Failed to create reservations' });
-            }
+            const res = await api.post('/reservations/bulk', {
+                dates: deskAssignments.map(a => a.date),
+                chairIds: deskAssignments.map(a => a.chairId),
+                meetingRoomId: null,
+                startTime: '09:00',
+                endTime: '17:00'
+            });
+            setMessage({ type: 'success', text: `${deskAssignments.length} desk reservation(s) created successfully!` });
             setDeskAssignments([]);
             loadAllData();
             loadCalendarStatuses();
         } catch (e) {
-            setMessage({ type: 'error', text: 'Failed to create reservations' });
+            setMessage({ type: 'error', text: e.response?.data?.error || 'Failed to create reservations' });
         } finally { setLoading(false); }
     };
 
@@ -593,12 +579,36 @@ export default function EmployeeDashboard() {
                                     </>
                                 )}
 
+                                 {deskAssignments.length > 0 && (
+                                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'hsl(var(--secondary))', borderRadius: '0.5rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Monthly Target ({user.targetAttendance || 50}%)</span>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: (deskReservations.filter(r => r.date.startsWith(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)).length + deskAssignments.length) >= Math.ceil((monthSummary?.workingDays || 22) * (user.targetAttendance || 50) / 100) ? 'hsl(var(--success))' : 'hsl(var(--destructive))' }}>
+                                                {(deskReservations.filter(r => r.date.startsWith(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)).length + deskAssignments.length)} / {Math.ceil((monthSummary?.workingDays || 22) * (user.targetAttendance || 50) / 100)} days
+                                            </span>
+                                        </div>
+                                        <div style={{ height: '8px', width: '100%', backgroundColor: 'hsl(var(--muted))', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{
+                                                height: '100%',
+                                                width: `${Math.min(((deskReservations.filter(r => r.date.startsWith(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)).length + deskAssignments.length) / Math.ceil((monthSummary?.workingDays || 22) * (user.targetAttendance || 50) / 100)) * 100, 100)}%`,
+                                                backgroundColor: (deskReservations.filter(r => r.date.startsWith(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)).length + deskAssignments.length) >= Math.ceil((monthSummary?.workingDays || 22) * (user.targetAttendance || 50) / 100) ? 'hsl(var(--success))' : 'hsl(var(--destructive))',
+                                                transition: 'width 0.3s ease'
+                                            }} />
+                                        </div>
+                                        {(deskReservations.filter(r => r.date.startsWith(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)).length + deskAssignments.length) < Math.ceil((monthSummary?.workingDays || 22) * (user.targetAttendance || 50) / 100) && (
+                                            <p style={{ fontSize: '0.7rem', color: 'hsl(var(--destructive))', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <AlertCircle size={12} /> You need {Math.ceil((monthSummary?.workingDays || 22) * (user.targetAttendance || 50) / 100) - (deskReservations.filter(r => r.date.startsWith(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)).length + deskAssignments.length)} more days to confirm.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
                                 <button className="btn-ui btn-primary" style={{ width: '100%' }}
                                     onClick={handleDeskReserveAll}
-                                    disabled={deskAssignments.length === 0 || loading}
+                                    disabled={deskAssignments.length === 0 || loading || (deskReservations.filter(r => r.date.startsWith(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)).length + deskAssignments.length) < Math.ceil((monthSummary?.workingDays || 22) * (user.targetAttendance || 50) / 100)}
                                     data-testid="complete-desk-booking-btn"
                                 >
-                                    {loading ? 'Booking...' : `Book All (${deskAssignments.length} day${deskAssignments.length !== 1 ? 's' : ''})`}
+                                    {loading ? 'Booking...' : (deskReservations.filter(r => r.date.startsWith(`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`)).length + deskAssignments.length) < Math.ceil((monthSummary?.workingDays || 22) * (user.targetAttendance || 50) / 100) ? 'Target Not Reached' : `Book All (${deskAssignments.length} day${deskAssignments.length !== 1 ? 's' : ''})`}
                                 </button>
                             </>
                         )}

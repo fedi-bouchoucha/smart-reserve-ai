@@ -2,6 +2,7 @@ package com.office.reservation.config;
 
 import com.office.reservation.entity.*;
 import com.office.reservation.repository.*;
+import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -46,6 +47,21 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
         }
 
+        // Update existing Employees with attendance targets
+        List<String> pct20 = List.of("ITE00000012", "ITE00000016", "ITE00000022", "ITE00000026", "ITE00000029", "ITE00000030", "ITE00000031", "ITE00000036", "ITE00000037", "ITE00000040", "ITE00000043", "ITE00000045", "ITE00000046", "ITE00000054", "ITE00000060");
+        List<String> pct100 = List.of("ITE00000063", "ITE00000070", "ITE00000071");
+
+        userRepository.findAll().forEach(u -> {
+            if (u.getUsername().startsWith("employee")) {
+                String iteId = u.getFullName(); // The full_name contains the ITE ID
+                int target = 50;
+                if (pct20.contains(iteId)) target = 20;
+                else if (pct100.contains(iteId)) target = 100;
+                u.setTargetAttendance(target);
+                userRepository.save(u);
+            }
+        });
+
         // Create Managers
         User manager1 = userRepository.findByUsername("manager1").orElse(null);
         if (manager1 == null) {
@@ -74,39 +90,12 @@ public class DataInitializer implements CommandLineRunner {
             manager2.setEmail("bob.johnson@office.com");
             userRepository.save(manager2);
         }
-
-        // Create Employees
-        String[] firstNames = { "Charlie", "Diana", "Edward", "Fiona", "George",
-                "Hannah", "Ivan", "Julia", "Kevin", "Laura" };
-        String[] lastNames = { "Brown", "Davis", "Wilson", "Taylor", "Anderson",
-                "Thomas", "Moore", "Clark", "Rodriguez", "Lewis" };
-
-        for (int i = 0; i < 10; i++) {
-            User manager = (i < 5) ? manager1 : manager2;
-            String username = "employee" + (i + 1);
-            String email = firstNames[i].toLowerCase() + "." + lastNames[i].toLowerCase() + "@office.com";
-            
-            User employee = userRepository.findByUsername(username).orElse(null);
-            if (employee == null) {
-                userRepository.save(User.builder()
-                        .username(username)
-                        .password(passwordEncoder.encode("emp123"))
-                        .fullName(firstNames[i] + " " + lastNames[i])
-                        .email(email)
-                        .role(Role.EMPLOYEE)
-                        .manager(manager)
-                        .build());
-            } else if (employee.getEmail() == null) {
-                employee.setEmail(email);
-                userRepository.save(employee);
-            }
-        }
     }
 
     private void initializeWorkspace() {
-        // Ensure exactly 20 emplacements numbered E01 to E20
-        for (int i = 1; i <= 20; i++) {
-            String name = "E" + String.format("%02d", i);
+        // Ensure exactly 44 emplacements numbered 1 to 44
+        for (int i = 1; i <= 44; i++) {
+            String name = String.valueOf(i);
             int floor = 3; // The user wants only one floor named floor 3
 
             Emplacement existingEmp = emplacementRepository.findByName(name).orElse(null);
@@ -123,15 +112,13 @@ public class DataInitializer implements CommandLineRunner {
                     .floor(floor)
                     .build());
 
-            for (int c = 1; c <= 4; c++) {
-                chairRepository.save(Chair.builder()
-                        .number(c)
-                        .emplacement(emp)
-                        .build());
-            }
+            chairRepository.save(Chair.builder()
+                    .number(1)
+                    .emplacement(emp)
+                    .build());
         }
         
-        System.out.println("=== Workspace Initialization Sync (20 Tables / 80 Chairs on Floor 3) ===");
+        System.out.println("=== Workspace Initialization Sync (44 Desks on Floor 3) ===");
     }
 
     private void initializeRooms() {

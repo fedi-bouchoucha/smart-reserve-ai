@@ -43,10 +43,12 @@ public class User {
 
     private Boolean archived = false;
 
+    private Integer targetAttendance = 50;
+
     public User() {
     }
 
-    public User(Long id, String username, String password, String fullName, String email, String profilePicture, Role role, User manager, String resetCode, LocalDateTime resetCodeExpiresAt, Boolean archived) {
+    public User(Long id, String username, String password, String fullName, String email, String profilePicture, Role role, User manager, String resetCode, LocalDateTime resetCodeExpiresAt, Boolean archived, Integer targetAttendance) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -58,6 +60,7 @@ public class User {
         this.resetCode = resetCode;
         this.resetCodeExpiresAt = resetCodeExpiresAt;
         this.archived = archived;
+        this.targetAttendance = targetAttendance;
     }
 
     // Getters and Setters
@@ -157,6 +160,14 @@ public class User {
         this.archived = archived;
     }
 
+    public Integer getTargetAttendance() {
+        return targetAttendance;
+    }
+
+    public void setTargetAttendance(Integer targetAttendance) {
+        this.targetAttendance = targetAttendance;
+    }
+
     // Builder
     public static UserBuilder builder() {
         return new UserBuilder();
@@ -174,6 +185,7 @@ public class User {
         private String resetCode;
         private LocalDateTime resetCodeExpiresAt;
         private Boolean archived = false;
+        private Integer targetAttendance = 50;
 
         public UserBuilder id(Long id) {
             this.id = id;
@@ -230,8 +242,13 @@ public class User {
             return this;
         }
 
+        public UserBuilder targetAttendance(Integer targetAttendance) {
+            this.targetAttendance = targetAttendance;
+            return this;
+        }
+
         public User build() {
-            return new User(id, username, password, fullName, email, profilePicture, role, manager, resetCode, resetCodeExpiresAt, archived);
+            return new User(id, username, password, fullName, email, profilePicture, role, manager, resetCode, resetCodeExpiresAt, archived, targetAttendance);
         }
     }
 }

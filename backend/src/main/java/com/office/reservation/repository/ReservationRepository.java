@@ -60,7 +60,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     boolean existsByUserIdAndDateAndStatusAndChairIsNotNull(@Param("userId") Long userId, @Param("date") LocalDate date, @Param("status") ReservationStatus status);
 
     // Find distinct user IDs who have at least one desk reservation in a date range (any non-cancelled status)
-    @Query("SELECT DISTINCT r.user.id FROM Reservation r WHERE r.chair IS NOT NULL AND r.date >= :start AND r.date <= :end AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED')")
+    @Query("SELECT DISTINCT r.user.id FROM Reservation r WHERE r.chair IS NOT NULL AND r.date >= :start AND r.date <= :end AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL')")
     List<Long> findUserIdsWithDeskReservationsInRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
     // Check if a user already has any desk reservation (any status) for a specific date
@@ -69,4 +69,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @Query("SELECT r FROM Reservation r WHERE r.user.id = :userId AND r.date = :date AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED')")
     List<Reservation> findActiveByUserIdAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
+
+    @Query("SELECT COUNT(r) FROM Reservation r WHERE r.user.id = :userId AND r.chair IS NOT NULL AND r.date >= :start AND r.date <= :end AND r.status != 'CANCELLED'")
+    long countActiveDeskReservationsByUserAndMonth(@Param("userId") Long userId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 }

@@ -12,7 +12,8 @@ import {
   ChevronRight,
   PieChart,
   Building2,
-  Brain
+  Brain,
+  Terminal
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -76,6 +77,7 @@ export default function Layout({ children }) {
             icon: PieChart, 
             roles: ['ADMIN'] 
         },
+
         { 
             to: "/profile", 
             label: "My Profile", 

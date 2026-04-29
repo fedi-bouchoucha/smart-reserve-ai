@@ -12,7 +12,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 
 /**
- * Scheduled task that auto-assigns chairs automatically without admin intervention.
+ * Scheduled task that auto-assigns chairs automatically without admin
+ * intervention.
  * After the booking window (1st-20th) closes, employees who didn't
  * reserve any chair for the next month get randomly assigned.
  */
@@ -57,11 +58,13 @@ public class AutoAssignmentScheduler {
         // Since the window is 1st - 20th, we only auto-assign if day > 20
         if (today.getDayOfMonth() > 20) {
             YearMonth nextMonth = YearMonth.from(today).plusMonths(1);
+
             System.out.println("=== AUTO-ASSIGNMENT SCHEDULER TRIGGERED ===");
             System.out.println("Past the 20th. Target month: " + nextMonth);
 
             try {
-                // AutoAssignmentService is idempotent: it skips employees that already have reservations.
+                // AutoAssignmentService is idempotent: it skips employees that already have
+                // reservations.
                 AutoAssignmentResponse result = autoAssignmentService
                         .autoAssignChairsForMonth(nextMonth.getYear(), nextMonth.getMonthValue());
 
@@ -77,7 +80,8 @@ public class AutoAssignmentScheduler {
                 e.printStackTrace();
             }
         } else {
-            System.out.println("Current day is " + today.getDayOfMonth() + " (<= 20). Auto-assignment skipped until the 21st.");
+            System.out.println(
+                    "Current day is " + today.getDayOfMonth() + " (<= 20). Auto-assignment skipped until the 21st.");
         }
     }
 }

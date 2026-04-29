@@ -7,17 +7,19 @@ public class LoginResponse {
     private String profilePicture;
     private String role;
     private Long userId;
+    private Integer targetAttendance;
 
     public LoginResponse() {
     }
 
-    public LoginResponse(String token, String username, String fullName, String profilePicture, String role, Long userId) {
+    public LoginResponse(String token, String username, String fullName, String profilePicture, String role, Long userId, Integer targetAttendance) {
         this.token = token;
         this.username = username;
         this.fullName = fullName;
         this.profilePicture = profilePicture;
         this.role = role;
         this.userId = userId;
+        this.targetAttendance = targetAttendance;
     }
 
     public String getToken() {
@@ -68,6 +70,14 @@ public class LoginResponse {
         this.userId = userId;
     }
 
+    public Integer getTargetAttendance() {
+        return targetAttendance;
+    }
+
+    public void setTargetAttendance(Integer targetAttendance) {
+        this.targetAttendance = targetAttendance;
+    }
+
     public static LoginResponseBuilder builder() {
         return new LoginResponseBuilder();
     }
@@ -79,6 +89,7 @@ public class LoginResponse {
         private String profilePicture;
         private String role;
         private Long userId;
+        private Integer targetAttendance;
 
         public LoginResponseBuilder token(String token) {
             this.token = token;
@@ -110,8 +121,13 @@ public class LoginResponse {
             return this;
         }
 
+        public LoginResponseBuilder targetAttendance(Integer targetAttendance) {
+            this.targetAttendance = targetAttendance;
+            return this;
+        }
+
         public LoginResponse build() {
-            return new LoginResponse(token, username, fullName, profilePicture, role, userId);
+            return new LoginResponse(token, username, fullName, profilePicture, role, userId, targetAttendance);
         }
     }
 }

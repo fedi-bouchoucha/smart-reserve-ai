@@ -84,6 +84,20 @@ public class ReservationService {
                 dayOffRepository.existsByUserIdAndDateAndStatus(userId, date, ReservationStatus.PENDING_APPROVAL)) {
                 throw new RuntimeException("You cannot reserve a desk on a day you have a declared day off (pending or confirmed).");
             }
+
+            // Custom constraints for specific desks
+            String deskName = chairRepository.findById(request.getChairId())
+                    .map(c -> c.getEmplacement().getName())
+                    .orElse("");
+            if (deskName.equals("1") && !user.getUsername().equals("employee63")) {
+                throw new RuntimeException("Desk 1 can only be reserved by employee63.");
+            }
+            if (deskName.equals("43") && !user.getUsername().equals("employee70")) {
+                throw new RuntimeException("Desk 43 can only be reserved by employee70.");
+            }
+            if (deskName.equals("44") && !user.getUsername().equals("employee71")) {
+                throw new RuntimeException("Desk 44 can only be reserved by employee71.");
+            }
         }
 
         ReservationStatus finalStatus = ReservationStatus.CONFIRMED;
@@ -140,14 +154,17 @@ public class ReservationService {
 
     @Transactional
     public List<ReservationResponse> createBulkReservations(Long userId, BulkReservationRequest request) {
-        // Monthly 50% desk presence validation (only for desk reservations)
-        if (request.getChairId() != null) {
-            validateMonthlyPresence(userId, request.getDates());
-        }
+        // Monthly attendance validation
+        validateMonthlyPresence(userId, request.getDates());
 
         List<ReservationResponse> responses = new ArrayList<>();
-        for (LocalDate date : request.getDates()) {
-            ReservationRequest req = new ReservationRequest(request.getChairId(), request.getMeetingRoomId(), date, request.getStartTime(), request.getEndTime());
+        for (int i = 0; i < request.getDates().size(); i++) {
+            LocalDate date = request.getDates().get(i);
+            Long cId = (request.getChairIds() != null && i < request.getChairIds().size()) 
+                    ? request.getChairIds().get(i) 
+                    : request.getChairId();
+            
+            ReservationRequest req = new ReservationRequest(cId, request.getMeetingRoomId(), date, request.getStartTime(), request.getEndTime());
             responses.add(createReservation(userId, req));
         }
         return responses;
@@ -159,8 +176,33 @@ public class ReservationService {
      * Desk bookings themselves don't block — the constraint is on days off count.
      */
     private void validateMonthlyPresence(Long userId, List<LocalDate> targetDates) {
-        // The 50% rule is enforced via the days-off calendar.
-        // Desk booking itself has no monthly limit — only per-date availability checks apply.
+        if (targetDates == null || targetDates.isEmpty()) return;
+        
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        if (user.getRole() != Role.EMPLOYEE) return;
+
+        LocalDate firstDate = targetDates.get(0);
+        YearMonth ym = YearMonth.from(firstDate);
+        
+        // Count working days in the target month
+        int workingDays = 0;
+        for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
+            if (d.getDayOfWeek() != DayOfWeek.SATURDAY && d.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                workingDays++;
+            }
+        }
+
+        int targetDays = (int) Math.ceil((double) workingDays * user.getTargetAttendance() / 100);
+        
+        // Count existing desk reservations for that month using optimized query
+        long existingCount = reservationRepository.countActiveDeskReservationsByUserAndMonth(
+                userId, ym.atDay(1), ym.atEndOfMonth());
+
+        if (existingCount + targetDates.size() < targetDays) {
+            throw new RuntimeException("To confirm your reservations for " + ym.getMonth() + 
+                ", you must book at least " + targetDays + " days to reach your " + 
+                user.getTargetAttendance() + "% monthly attendance target.");
+        }
     }
 
     /**
@@ -335,6 +377,31 @@ public class ReservationService {
         List<CalendarStatusDTO> out = new ArrayList<>();
         long totalStaff = userRepository.countByRole(Role.EMPLOYEE);
         LocalTime s = LocalTime.of(9,0), e = LocalTime.of(17,0);
+        User user = userRepository.findById(userId).orElse(null);
+
+        // Desk assignment constraints
+        if (resourceId != null && "chair".equalsIgnoreCase(resourceType)) {
+            String deskName = chairRepository.findById(resourceId).map(c -> c.getEmplacement().getName()).orElse("");
+            if (deskName.equals("1") && user != null && !user.getUsername().equals("employee63")) {
+                for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
+                    out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk 1 can only be reserved by employee63.", 0));
+                }
+                return out;
+            }
+            if (deskName.equals("43") && user != null && !user.getUsername().equals("employee70")) {
+                for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
+                    out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk 43 can only be reserved by employee70.", 0));
+                }
+                return out;
+            }
+            if (deskName.equals("44") && user != null && !user.getUsername().equals("employee71")) {
+                for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
+                    out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk 44 can only be reserved by employee71.", 0));
+                }
+                return out;
+            }
+        }
+
         for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
             long occ = reservationRepository.countByDateAndStatus(d, ReservationStatus.CONFIRMED);
             double percentage = totalStaff > 0 ? (double)occ / totalStaff : 0;
@@ -351,7 +418,6 @@ public class ReservationService {
                 out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "You have a day off declared (pending or confirmed) for this day.", percentage)); continue;
             }
             // 5. Next month only restriction (Employees only)
-            User user = userRepository.findById(userId).orElse(null);
             if (user != null && user.getRole() == Role.EMPLOYEE && resourceType != null && resourceType.equalsIgnoreCase("chair")) {
                 if (!YearMonth.from(d).equals(YearMonth.from(LocalDate.now()).plusMonths(1))) {
                     out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk reservations are only allowed for the next month.", percentage)); continue;

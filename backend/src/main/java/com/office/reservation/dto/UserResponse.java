@@ -10,12 +10,13 @@ public class UserResponse {
     private Long managerId;
     private String managerName;
     private boolean archived;
+    private Integer targetAttendance;
 
     public UserResponse() {
     }
 
     public UserResponse(Long id, String username, String fullName, String email, String profilePicture, String role, Long managerId,
-            String managerName, boolean archived) {
+            String managerName, boolean archived, Integer targetAttendance) {
         this.id = id;
         this.username = username;
         this.fullName = fullName;
@@ -25,6 +26,7 @@ public class UserResponse {
         this.managerId = managerId;
         this.managerName = managerName;
         this.archived = archived;
+        this.targetAttendance = targetAttendance;
     }
 
     public Long getId() {
@@ -99,6 +101,14 @@ public class UserResponse {
         this.archived = archived;
     }
 
+    public Integer getTargetAttendance() {
+        return targetAttendance;
+    }
+
+    public void setTargetAttendance(Integer targetAttendance) {
+        this.targetAttendance = targetAttendance;
+    }
+
     public static UserResponseBuilder builder() {
         return new UserResponseBuilder();
     }
@@ -113,6 +123,7 @@ public class UserResponse {
         private Long managerId;
         private String managerName;
         private boolean archived;
+        private Integer targetAttendance;
 
         public UserResponseBuilder id(Long id) {
             this.id = id;
@@ -159,8 +170,13 @@ public class UserResponse {
             return this;
         }
 
+        public UserResponseBuilder targetAttendance(Integer targetAttendance) {
+            this.targetAttendance = targetAttendance;
+            return this;
+        }
+
         public UserResponse build() {
-            return new UserResponse(id, username, fullName, email, profilePicture, role, managerId, managerName, archived);
+            return new UserResponse(id, username, fullName, email, profilePicture, role, managerId, managerName, archived, targetAttendance);
         }
     }
 }

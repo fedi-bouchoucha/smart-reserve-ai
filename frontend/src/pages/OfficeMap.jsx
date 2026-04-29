@@ -4,31 +4,76 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Filter, X, CheckCircle2, AlertCircle, Layers,
-  MapPin, Monitor, Coffee, ChevronRight, Calendar, Clock, Info
+  MapPin, Calendar, Info
 } from 'lucide-react';
 
-// Grid config: 5 columns x 4 rows = 20 emplacements
-const COLS = 5, ROWS = 4;
-const DESK_W = 88, DESK_H = 56;
-const GAP_X = 14, GAP_Y = 14;
-const MARGIN_X = 80, MARGIN_Y = 90;
-const AISLE_AFTER_COL = 4; // extra gap after column 5
-const AISLE_EXTRA = 40;
+const DESKS_DATA = [
+  { id: '38', x: 40, y: 60, w: 45, h: 32, color: 'blue' },
+  { id: '37', x: 90, y: 60, w: 45, h: 32, color: 'blue' },
+  { id: '36', x: 140, y: 60, w: 45, h: 32, color: 'blue' },
+  { id: '32', x: 40, y: 97, w: 45, h: 32, color: 'blue' },
+  { id: '31', x: 90, y: 97, w: 45, h: 32, color: 'blue' },
+  { id: '30', x: 140, y: 97, w: 45, h: 32, color: 'blue' },
 
-function deskPos(index) {
-  const col = index % COLS, row = Math.floor(index / COLS);
-  const x = MARGIN_X + col * (DESK_W + GAP_X) + (col > AISLE_AFTER_COL ? AISLE_EXTRA : 0);
-  const y = MARGIN_Y + row * (DESK_H + GAP_Y);
-  return { x, y, col, row };
-}
+  { id: '35', x: 290, y: 60, w: 45, h: 32, color: 'blue' },
+  { id: '29', x: 290, y: 97, w: 45, h: 32, color: 'blue' },
+  { id: '34', x: 374, y: 60, w: 45, h: 32, color: 'blue' },
+  { id: '33', x: 424, y: 60, w: 45, h: 32, color: 'blue' },
+  { id: '28', x: 374, y: 97, w: 45, h: 32, color: 'blue' },
+  { id: '27', x: 424, y: 97, w: 45, h: 32, color: 'blue' },
 
-const CHAIR_OFFSETS = [
-  { dx: 14, dy: -8 }, { dx: 42, dy: -8 },
-  { dx: 14, dy: DESK_H + 2 }, { dx: 42, dy: DESK_H + 2 }
+  { id: '26', x: 40, y: 200, w: 45, h: 32, color: 'blue' },
+  { id: '25', x: 90, y: 200, w: 45, h: 32, color: 'blue' },
+  { id: '24', x: 140, y: 200, w: 45, h: 32, color: 'blue' },
+  { id: '20', x: 40, y: 237, w: 45, h: 32, color: 'blue' },
+  { id: '19', x: 90, y: 237, w: 45, h: 32, color: 'blue' },
+  { id: '18', x: 140, y: 237, w: 45, h: 32, color: 'blue' },
+
+  { id: '23', x: 290, y: 200, w: 45, h: 32, color: 'blue' },
+  { id: '17', x: 290, y: 237, w: 45, h: 32, color: 'blue' },
+  { id: '22', x: 374, y: 200, w: 45, h: 32, color: 'blue' },
+  { id: '21', x: 424, y: 200, w: 45, h: 32, color: 'blue' },
+  { id: '16', x: 374, y: 237, w: 45, h: 32, color: 'blue' },
+  { id: '15', x: 424, y: 237, w: 45, h: 32, color: 'blue' },
+
+  { id: '14', x: 40, y: 340, w: 45, h: 32, color: 'blue' },
+  { id: '13', x: 90, y: 340, w: 45, h: 32, color: 'blue' },
+  { id: '12', x: 140, y: 340, w: 45, h: 32, color: 'blue' },
+  { id: '8',  x: 40, y: 377, w: 45, h: 32, color: 'blue' },
+  { id: '7',  x: 90, y: 377, w: 45, h: 32, color: 'blue' },
+  { id: '6',  x: 140, y: 377, w: 45, h: 32, color: 'blue' },
+
+  { id: '11', x: 290, y: 340, w: 45, h: 32, color: 'blue' },
+  { id: '5',  x: 290, y: 377, w: 45, h: 32, color: 'blue' },
+  { id: '10', x: 374, y: 340, w: 45, h: 32, color: 'blue' },
+  { id: '9',  x: 424, y: 340, w: 45, h: 32, color: 'blue' },
+  { id: '4',  x: 374, y: 377, w: 45, h: 32, color: 'blue' },
+  { id: '3',  x: 424, y: 377, w: 45, h: 32, color: 'blue' },
+
+  { id: '2',  x: 485, y: 470, w: 45, h: 32, color: 'blue' },
+  { id: '1',  x: 485, y: 507, w: 45, h: 32, color: 'red' },
+
+  { id: '44', x: 640, y: 150, w: 45, h: 32, color: 'red' },
+  { id: '43', x: 690, y: 150, w: 45, h: 32, color: 'red' },
+
+  { id: '42', x: 640, y: 280, w: 68, h: 32, color: 'blue' },
+  { id: '41', x: 713, y: 280, w: 68, h: 32, color: 'blue' },
+  { id: '40', x: 640, y: 317, w: 68, h: 32, color: 'blue' },
+  { id: '39', x: 713, y: 317, w: 68, h: 32, color: 'blue' },
 ];
 
-const SVG_W = MARGIN_X * 2 + COLS * DESK_W + (COLS - 1) * GAP_X + AISLE_EXTRA;
-const SVG_H = MARGIN_Y + ROWS * (DESK_H + GAP_Y) + 60;
+const STATIC_SHAPES = [
+  { id: 'manager', x: 207, y: 600, w: 208, h: 45, label: 'Manager Offices', type: 'outline_red' },
+  { id: 'director', x: 40, y: 885, w: 168, h: 35, label: 'Director Office', type: 'yellow' },
+  { id: 'iaf4', x: 40, y: 735, w: 168, h: 32, label: 'IAF4', type: 'green' },
+  { id: 'iaf3', x: 40, y: 772, w: 168, h: 32, label: 'IAF3', type: 'green' },
+  { id: 'iaf2', x: 40, y: 809, w: 168, h: 32, label: 'IAF2', type: 'green' },
+  { id: 'iaf1', x: 40, y: 846, w: 168, h: 32, label: 'IAF1', type: 'green' },
+  { id: 'iaf5', x: 765, y: 740, w: 110, h: 35, label: 'IAF5', type: 'pink' }
+];
+
+const SVG_W = 950;
+const SVG_H = 960;
 
 export default function OfficeMap({ pickerMode = false, pickerDate = null, onChairSelected = null, onClose = null }) {
   const { user } = useAuth();
@@ -38,7 +83,6 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
     return d.toISOString().split('T')[0];
   });
   const [availableChairs, setAvailableChairs] = useState([]);
-  const [allChairs, setAllChairs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedDesk, setSelectedDesk] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -60,125 +104,104 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
   const loadAvailability = async () => {
     setLoading(true);
     try {
-      const [availRes, allRes] = await Promise.all([
-        api.get(`/reservations/available/chairs/${selectedDate}`),
-        api.get(`/reservations/available/chairs/2000-01-01`).catch(() => ({ data: [] }))
-      ]);
+      const availRes = await api.get(`/reservations/available/chairs/${selectedDate}`);
       setAvailableChairs(availRes.data || []);
-      // Build full chair list from available on a far-future date (gets all)
-      // Fallback: use available as reference
-      setAllChairs(availRes.data || []);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
 
-  // Build emplacement map: { "E01": { id, name, floor, chairs: [{id, number, available}] } }
   const emplacements = useMemo(() => {
     const map = {};
-    const availIds = new Set(availableChairs.map(c => c.id));
-    // We need all chairs. Since API only returns available, we infer from chair numbering.
-    // Each emplacement E01-E80 has chairs 1-4.
-    for (let i = 1; i <= 20; i++) {
-      const name = `E${String(i).padStart(2, '0')}`;
-      map[name] = { name, index: i - 1, chairs: [] };
+    for (let i = 1; i <= 44; i++) {
+      const name = String(i);
+      map[name] = { name, chairs: [] };
     }
     availableChairs.forEach(c => {
       const empName = c.emplacementName;
       if (map[empName]) {
         map[empName].floor = c.floor;
         map[empName].emplacementId = c.emplacementId;
-        if (!map[empName].chairs.find(ch => ch.id === c.id)) {
-          map[empName].chairs.push({ id: c.id, number: c.number, available: true });
-        }
+        map[empName].chairs.push({ id: c.id, number: c.number, available: true });
       }
     });
-    // Fill missing chairs (chairs 1-4 that are NOT available = occupied)
     Object.values(map).forEach(emp => {
-      const existing = new Set(emp.chairs.map(c => c.number));
-      for (let n = 1; n <= 4; n++) {
-        if (!existing.has(n)) {
-          emp.chairs.push({ id: null, number: n, available: false });
-        }
+      if (emp.chairs.length === 0) {
+        emp.chairs.push({ id: null, number: 1, available: false });
       }
-      emp.chairs.sort((a, b) => a.number - b.number);
-      emp.availableCount = emp.chairs.filter(c => c.available).length;
-      emp.status = emp.availableCount === 4 ? 'available' : emp.availableCount > 0 ? 'partial' : 'full';
+      emp.available = emp.chairs[0].available;
+      emp.chairId = emp.chairs[0].id;
     });
     return map;
   }, [availableChairs]);
 
   const empList = useMemo(() => {
-    let list = Object.values(emplacements);
+    let list = DESKS_DATA.map(d => ({ ...d, emp: emplacements[d.id] }));
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      list = list.filter(e => e.name.toLowerCase().includes(q));
+      list = list.filter(e => e.id.includes(q));
     }
-    if (filter === 'available') list = list.filter(e => e.status === 'available');
-    else if (filter === 'partial') list = list.filter(e => e.status === 'partial');
-    else if (filter === 'full') list = list.filter(e => e.status === 'full');
+    if (filter === 'available') list = list.filter(e => e.emp?.available);
+    else if (filter === 'full') list = list.filter(e => !e.emp?.available);
     return list;
   }, [emplacements, searchTerm, filter]);
 
-  const filteredNames = new Set(empList.map(e => e.name));
+  const filteredNames = new Set(empList.map(e => e.id));
 
-  const statusColor = (status) => {
-    if (status === 'available') return { fill: 'hsl(142, 71%, 45%)', stroke: 'hsl(142, 71%, 35%)' };
-    if (status === 'partial') return { fill: 'hsl(38, 92%, 50%)', stroke: 'hsl(38, 92%, 40%)' };
-    return { fill: 'hsl(0, 84%, 60%)', stroke: 'hsl(0, 84%, 50%)' };
+  const getDeskStyle = (desk, emp) => {
+    if (!emp?.available) return { fill: 'hsl(var(--muted))', stroke: 'hsl(var(--border))', text: 'hsl(var(--muted-foreground))' };
+    
+    if (desk.color === 'blue') return { fill: '#3b82f6', stroke: '#2563eb', text: 'white' };
+    if (desk.color === 'red') return { fill: '#ef4444', stroke: '#dc2626', text: 'white' };
+    return { fill: 'hsl(var(--primary))', stroke: 'hsl(var(--primary))', text: 'white' };
   };
 
-  const handleDeskClick = (emp) => {
-    setSelectedDesk(emp);
+  const handleDeskClick = (deskId, emp) => {
+    setSelectedDesk({ deskId, emp });
   };
 
-  const handleBookChair = async (chair) => {
-    if (!chair.available || !chair.id) return;
-    // In picker mode, just return the selection to parent
+  const handleBookChair = async (chairId) => {
+    if (!chairId) return;
     if (pickerMode && onChairSelected) {
-      onChairSelected({ id: chair.id, number: chair.number, floor: selectedDesk.floor || 3, emplacementName: selectedDesk.name });
+      onChairSelected({ id: chairId, number: 1, floor: 3, emplacementName: selectedDesk.deskId });
       return;
     }
     setBookingLoading(true);
     try {
       await api.post('/reservations', {
-        chairId: chair.id,
+        chairId: chairId,
         meetingRoomId: null,
         date: selectedDate,
         startTime: '09:00',
         endTime: '17:00'
       });
-      setMessage({ type: 'success', text: `Desk ${selectedDesk.name} / Chair ${chair.number} booked for ${selectedDate}!` });
+      setMessage({ type: 'success', text: `Desk ${selectedDesk.deskId} booked for ${selectedDate}!` });
       loadAvailability();
-      setSelectedDesk(prev => prev ? { ...prev } : null);
+      setSelectedDesk(null);
     } catch (e) {
       setMessage({ type: 'error', text: e.response?.data?.error || 'Booking failed' });
     }
     setBookingLoading(false);
   };
 
-  const handleMouseEnter = (emp, evt) => {
-    setHoveredDesk(emp.name);
+  const handleMouseEnter = (deskId, emp, evt) => {
+    setHoveredDesk(deskId);
     const svgRect = svgRef.current?.getBoundingClientRect();
     if (svgRect) {
-      setTooltip({ text: `${emp.name} — ${emp.availableCount}/4 available`, x: evt.clientX - svgRect.left, y: evt.clientY - svgRect.top - 12 });
+      setTooltip({ text: `Desk ${deskId} — ${emp?.available ? 'Available' : 'Occupied'}`, x: evt.clientX - svgRect.left, y: evt.clientY - svgRect.top - 12 });
     }
   };
 
   const stats = useMemo(() => {
     const all = Object.values(emplacements);
     return {
-      total: 20,
-      available: all.filter(e => e.status === 'available').length,
-      partial: all.filter(e => e.status === 'partial').length,
-      full: all.filter(e => e.status === 'full').length,
-      totalChairs: 80,
-      availChairs: all.reduce((s, e) => s + e.availableCount, 0)
+      total: 44,
+      available: all.filter(e => e.available).length,
+      full: all.filter(e => !e.available).length,
     };
   }, [emplacements]);
 
   return (
     <div className={pickerMode ? '' : 'animate-in'}>
-      {/* Header — hidden in picker mode */}
       {!pickerMode && (
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -198,7 +221,6 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
       </div>
       )}
 
-      {/* Message */}
       <AnimatePresence>
         {message.text && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -209,7 +231,6 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
         )}
       </AnimatePresence>
 
-      {/* Stats + Filters — show search/filters inline in picker mode */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
         {pickerMode && (
           <div style={{ position: 'relative' }}>
@@ -219,24 +240,21 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
           </div>
         )}
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {[{ key: 'all', label: 'All' }, { key: 'available', label: `Available (${stats.available})` }, { key: 'partial', label: `Partial (${stats.partial})` }, { key: 'full', label: `Full (${stats.full})` }].map(f => (
+          {[{ key: 'all', label: 'All' }, { key: 'available', label: `Available (${stats.available})` }, { key: 'full', label: `Occupied (${stats.full})` }].map(f => (
             <button key={f.key} className={`btn-ui btn-sm ${filter === f.key ? 'btn-primary' : 'btn-outline'}`} onClick={() => setFilter(f.key)}>
               {f.label}
             </button>
           ))}
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', fontSize: '0.75rem', fontWeight: 600, alignItems: 'center' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'hsl(142,71%,45%)' }} /> Available</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'hsl(38,92%,50%)' }} /> Partial</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'hsl(0,84%,60%)' }} /> Full</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: '#3b82f6' }} /> Available</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'hsl(var(--muted))' }} /> Occupied</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'hsl(var(--primary))' }} /> Selected</span>
         </div>
       </div>
 
-      {/* Main Layout: SVG + Sidebar */}
       <div style={{ display: 'grid', gridTemplateColumns: selectedDesk ? '1fr 360px' : '1fr', gap: '1.5rem', transition: 'all 0.3s ease' }}>
 
-        {/* SVG Floor Plan */}
         <div className="card-modern" style={{ padding: '1rem', overflow: 'hidden', position: 'relative' }}>
           {loading && (
             <div style={{ position: 'absolute', inset: 0, background: 'hsl(var(--background) / 0.7)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius)' }}>
@@ -244,102 +262,74 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
             </div>
           )}
           <svg ref={svgRef} viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ width: '100%', height: 'auto', cursor: 'default' }}
-            role="img" aria-label="Office floor plan with 20 desks">
+            role="img" aria-label="Office floor plan">
 
             {/* Background */}
-            <rect x="0" y="0" width={SVG_W} height={SVG_H} rx="12" fill="hsl(var(--secondary))" opacity="0.5" />
+            <rect x="0" y="0" width={SVG_W} height={SVG_H} rx="12" fill="hsl(var(--secondary))" opacity="0.3" />
 
-            {/* Room outline */}
-            <rect x="20" y="20" width={SVG_W - 40} height={SVG_H - 40} rx="8" fill="none" stroke="hsl(var(--border))" strokeWidth="2" strokeDasharray="6 3" />
+            {/* Title Main floor */}
+            <text x="35" y="35" fontSize="16" fontWeight="700" fill="hsl(var(--muted-foreground))">Main floor</text>
+            
+            {/* Title Side / Design center */}
+            <text x="650" y="35" fontSize="16" fontWeight="700" fill="hsl(var(--muted-foreground))">Side / Design center</text>
+            <text x="630" y="110" fontSize="14" fontWeight="600" fill="hsl(var(--muted-foreground))">Design center</text>
+            <text x="630" y="250" fontSize="14" fontWeight="600" fill="hsl(var(--muted-foreground))">24/7</text>
 
-            {/* Floor label */}
-            <text x={SVG_W / 2} y="50" textAnchor="middle" fontSize="18" fontWeight="800" fill="hsl(var(--muted-foreground))" opacity="0.3">FLOOR 3 — OPEN SPACE</text>
-
-            {/* Column labels */}
-            {Array.from({ length: COLS }, (_, i) => {
-              const x = MARGIN_X + i * (DESK_W + GAP_X) + (i > AISLE_AFTER_COL ? AISLE_EXTRA : 0) + DESK_W / 2;
-              return <text key={`col-${i}`} x={x} y="78" textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--muted-foreground))" opacity="0.4">{String.fromCharCode(65 + i)}</text>;
-            })}
-
-            {/* Row labels */}
-            {Array.from({ length: ROWS }, (_, i) => {
-              const y = MARGIN_Y + i * (DESK_H + GAP_Y) + DESK_H / 2 + 4;
-              return <text key={`row-${i}`} x="50" y={y} textAnchor="middle" fontSize="10" fontWeight="600" fill="hsl(var(--muted-foreground))" opacity="0.4">{i + 1}</text>;
-            })}
-
-            {/* Aisle line */}
-            <line x1={MARGIN_X + 5 * (DESK_W + GAP_X) - GAP_X / 2 + AISLE_EXTRA / 2} y1="85"
-              x2={MARGIN_X + 5 * (DESK_W + GAP_X) - GAP_X / 2 + AISLE_EXTRA / 2} y2={SVG_H - 30}
-              stroke="hsl(var(--muted-foreground))" strokeWidth="1" strokeDasharray="4 4" opacity="0.15" />
+            {/* Divider line */}
+            <line x1="600" y1="20" x2="600" y2={SVG_H - 100} stroke="hsl(var(--border))" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" />
 
             {/* Desks */}
-            {Array.from({ length: 20 }, (_, i) => {
-              const name = `E${String(i + 1).padStart(2, '0')}`;
-              const emp = emplacements[name];
-              const pos = deskPos(i);
-              const isSelected = selectedDesk?.name === name;
-              const isHovered = hoveredDesk === name;
-              const isVisible = filteredNames.has(name);
-              const colors = statusColor(emp?.status || 'full');
+            {DESKS_DATA.map((desk) => {
+              const emp = emplacements[desk.id];
+              const isSelected = selectedDesk?.deskId === desk.id;
+              const isHovered = hoveredDesk === desk.id;
+              const isVisible = filteredNames.has(desk.id);
+              const colors = getDeskStyle(desk, emp);
 
               return (
-                <g key={name} style={{ cursor: 'pointer', opacity: isVisible ? 1 : 0.15, transition: 'opacity 0.3s ease' }}
-                  onClick={() => emp && handleDeskClick(emp)}
-                  onMouseEnter={(e) => emp && handleMouseEnter(emp, e.nativeEvent)}
+                <g key={desk.id} style={{ cursor: emp?.available ? 'pointer' : 'not-allowed', opacity: isVisible ? 1 : 0.15, transition: 'opacity 0.3s ease' }}
+                  onClick={() => handleDeskClick(desk.id, emp)}
+                  onMouseEnter={(e) => handleMouseEnter(desk.id, emp, e.nativeEvent)}
                   onMouseLeave={() => { setHoveredDesk(null); setTooltip(null); }}
-                  role="button" tabIndex={isVisible ? 0 : -1} aria-label={`Desk ${name}, ${emp?.availableCount || 0} of 4 chairs available`}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && emp) handleDeskClick(emp); }}
                 >
-                  {/* Glow */}
-                  {(isSelected || isHovered) && (
-                    <rect x={pos.x - 4} y={pos.y - 4} width={DESK_W + 8} height={DESK_H + 8} rx="10"
-                      fill="none" stroke={isSelected ? 'hsl(var(--primary))' : colors.stroke} strokeWidth="2" opacity="0.6">
+                  {(isSelected || isHovered) && emp?.available && (
+                    <rect x={desk.x - 4} y={desk.y - 4} width={desk.w + 8} height={desk.h + 8} rx="6"
+                      fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6">
                       <animate attributeName="opacity" values="0.6;0.3;0.6" dur="2s" repeatCount="indefinite" />
                     </rect>
                   )}
-
-                  {/* Table body */}
-                  <rect x={pos.x} y={pos.y} width={DESK_W} height={DESK_H} rx="6"
+                  <rect x={desk.x} y={desk.y} width={desk.w} height={desk.h} rx="4"
                     fill={isSelected ? 'hsl(var(--primary))' : colors.fill}
                     stroke={isSelected ? 'hsl(var(--primary))' : colors.stroke}
-                    strokeWidth={isSelected ? 2 : 1}
-                    opacity={isSelected ? 1 : 0.85}
-                    style={{ transition: 'all 0.25s ease' }}
+                    strokeWidth="1"
+                    opacity={emp?.available ? 0.9 : 0.5}
                   />
-
-                  {/* Label */}
-                  <text x={pos.x + DESK_W / 2} y={pos.y + DESK_H / 2 - 4} textAnchor="middle" fontSize="11" fontWeight="700"
-                    fill={isSelected ? 'white' : 'white'} opacity="0.95">{name}</text>
-                  <text x={pos.x + DESK_W / 2} y={pos.y + DESK_H / 2 + 10} textAnchor="middle" fontSize="8" fontWeight="500"
-                    fill="white" opacity="0.7">{emp?.availableCount ?? 0}/4</text>
-
-                  {/* Chair dots */}
-                  {CHAIR_OFFSETS.map((off, ci) => {
-                    const chair = emp?.chairs?.[ci];
-                    return (
-                      <circle key={ci} cx={pos.x + off.dx} cy={pos.y + off.dy} r="5"
-                        fill={chair?.available ? 'hsl(142,71%,90%)' : 'hsl(0,60%,85%)'}
-                        stroke={chair?.available ? 'hsl(142,71%,45%)' : 'hsl(0,60%,55%)'}
-                        strokeWidth="1.5" opacity="0.9" />
-                    );
-                  })}
+                  <text x={desk.x + desk.w / 2} y={desk.y + desk.h / 2 + 4} textAnchor="middle" fontSize="12" fontWeight="700"
+                    fill={colors.text}>{desk.id}</text>
                 </g>
               );
             })}
 
-            {/* Meeting Room */}
-            <rect x={SVG_W - 200} y={SVG_H - 80} width="160" height="50" rx="8"
-              fill="hsl(var(--primary))" opacity="0.15" stroke="hsl(var(--primary))" strokeWidth="1.5" strokeDasharray="5 3" />
-            <text x={SVG_W - 120} y={SVG_H - 50} textAnchor="middle" fontSize="11" fontWeight="700" fill="hsl(var(--primary))" opacity="0.7">Meeting Room</text>
+            {/* Static Shapes */}
+            {STATIC_SHAPES.map(shape => {
+              let fill, stroke;
+              if (shape.type === 'outline_red') { fill = 'hsl(10, 100%, 95%)'; stroke = '#f87171'; }
+              else if (shape.type === 'yellow') { fill = '#fcd34d'; stroke = '#fbbf24'; }
+              else if (shape.type === 'green') { fill = '#a3e635'; stroke = '#65a30d'; }
+              else if (shape.type === 'pink') { fill = '#f472b6'; stroke = '#db2777'; }
 
-            {/* Amenities */}
-            <rect x="25" y={SVG_H - 60} width="50" height="30" rx="4" fill="hsl(var(--muted-foreground))" opacity="0.08" />
-            <text x="50" y={SVG_H - 40} textAnchor="middle" fontSize="8" fill="hsl(var(--muted-foreground))" opacity="0.4">☕ Kitchen</text>
+              return (
+                <g key={shape.id}>
+                  <rect x={shape.x} y={shape.y} width={shape.w} height={shape.h} rx="4"
+                    fill={fill} stroke={stroke} strokeWidth="1" opacity="0.9" />
+                  <text x={shape.x + shape.w / 2} y={shape.y + shape.h / 2 + 5} textAnchor="middle" fontSize="12" fontWeight="700"
+                    fill={shape.type === 'outline_red' ? '#b91c1c' : (shape.type === 'yellow' ? '#000' : '#fff')}>{shape.label}</text>
+                </g>
+              )
+            })}
 
-            <text x={SVG_W / 2} y={SVG_H - 20} textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))" opacity="0.3">↑ ENTRANCE</text>
           </svg>
 
-          {/* Tooltip */}
           {tooltip && (
             <div style={{
               position: 'absolute', left: tooltip.x, top: tooltip.y,
@@ -354,7 +344,6 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
           )}
         </div>
 
-        {/* Sidebar */}
         <AnimatePresence>
           {selectedDesk && (
             <motion.div
@@ -363,8 +352,8 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{selectedDesk.name}</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Floor 3 • {selectedDesk.availableCount}/4 chairs free</p>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Desk {selectedDesk.deskId}</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Floor 3</p>
                 </div>
                 <button className="btn-ui btn-ghost" style={{ padding: '0.25rem' }} onClick={() => setSelectedDesk(null)}><X size={18} /></button>
               </div>
@@ -374,46 +363,40 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
                 <span style={{ fontWeight: 600 }}>{new Date(selectedDate + 'T00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</span>
               </div>
 
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 700, color: 'hsl(var(--muted-foreground))', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
-                Chairs
-              </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                {selectedDesk.chairs.map(chair => (
-                  <div key={chair.number} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '0.75rem', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)',
-                    background: chair.available ? 'hsl(var(--success) / 0.04)' : 'hsl(var(--destructive) / 0.04)',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: '50%',
-                        background: chair.available ? 'hsl(var(--success) / 0.12)' : 'hsl(var(--destructive) / 0.12)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        <Layers size={14} style={{ color: chair.available ? 'hsl(var(--success))' : 'hsl(var(--destructive))' }} />
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Chair {chair.number}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))' }}>
-                          {chair.available ? '✓ Available' : '✕ Occupied'}
-                        </div>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '0.75rem', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)',
+                  background: selectedDesk.emp?.available ? 'hsl(var(--success) / 0.04)' : 'hsl(var(--destructive) / 0.04)',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: selectedDesk.emp?.available ? 'hsl(var(--success) / 0.12)' : 'hsl(var(--destructive) / 0.12)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <Layers size={14} style={{ color: selectedDesk.emp?.available ? 'hsl(var(--success))' : 'hsl(var(--destructive))' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Status</div>
+                      <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))' }}>
+                        {selectedDesk.emp?.available ? '✓ Available' : '✕ Occupied'}
                       </div>
                     </div>
-                    {chair.available && (
-                      <button className="btn-ui btn-primary btn-sm" onClick={() => handleBookChair(chair)} disabled={bookingLoading}>
-                        {bookingLoading ? '...' : (pickerMode ? 'Select' : 'Book')}
-                      </button>
-                    )}
                   </div>
-                ))}
+                  {selectedDesk.emp?.available && (
+                    <button className="btn-ui btn-primary btn-sm" onClick={() => handleBookChair(selectedDesk.emp.chairId)} disabled={bookingLoading}>
+                      {bookingLoading ? '...' : (pickerMode ? 'Select' : 'Book')}
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div style={{ padding: '0.75rem', background: 'hsl(var(--muted) / 0.3)', borderRadius: 'var(--radius)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
                 <Info size={14} style={{ color: 'hsl(var(--primary))', marginTop: '2px', flexShrink: 0 }} />
                 <p style={{ fontSize: '0.72rem', color: 'hsl(var(--muted-foreground))', margin: 0, lineHeight: 1.5 }}>
-                  Booking is for the full day (09:00–17:00). If the date has a Home Office assignment, booking will require manager approval.
+                  Booking is for the full day (09:00–17:00).
                 </p>
               </div>
             </motion.div>
@@ -421,14 +404,13 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
         </AnimatePresence>
       </div>
 
-      {/* Bottom stats bar — hidden in picker mode */}
       {!pickerMode && (
       <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         {[
           { label: 'Total Desks', value: stats.total, color: 'hsl(var(--foreground))' },
-          { label: 'Available', value: stats.availChairs + ' chairs', color: 'hsl(var(--success))' },
-          { label: 'Occupied', value: (80 - stats.availChairs) + ' chairs', color: 'hsl(var(--destructive))' },
-          { label: 'Occupancy', value: Math.round(((80 - stats.availChairs) / 80) * 100) + '%', color: 'hsl(var(--primary))' }
+          { label: 'Available', value: stats.available + ' desks', color: 'hsl(var(--success))' },
+          { label: 'Occupied', value: stats.full + ' desks', color: 'hsl(var(--destructive))' },
+          { label: 'Occupancy', value: Math.round((stats.full / stats.total) * 100) + '%', color: 'hsl(var(--primary))' }
         ].map(s => (
           <div key={s.label} className="card-modern" style={{ flex: 1, minWidth: '140px', padding: '1rem', textAlign: 'center' }}>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color }}>{s.value}</div>

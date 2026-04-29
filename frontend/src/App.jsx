@@ -5,6 +5,7 @@ import EmployeeDashboard from './pages/EmployeeDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAnalyticsDashboard from './pages/AdminAnalyticsDashboard';
+
 import PerformanceAnalytics from './pages/PerformanceAnalytics';
 import Profile from './pages/Profile';
 import MeetingRoomBooking from './pages/MeetingRoomBooking';
@@ -60,6 +61,7 @@ function App() {
                             <Layout><AdminAnalyticsDashboard /></Layout>
                         </ProtectedRoute>
                     } />
+
                     <Route path="/admin/performance" element={
                         <ProtectedRoute roles={['ADMIN']}>
                             <Layout><PerformanceAnalytics /></Layout>

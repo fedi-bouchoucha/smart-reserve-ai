@@ -107,13 +107,49 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse updateProfile(Long id, String fullName, String email, String profilePicture) {
+    public UserResponse updateProfile(Long id, String fullName, String email, String profilePicture, String username) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setFullName(fullName);
         user.setEmail(email);
         user.setProfilePicture(profilePicture);
+        if (username != null && !username.isBlank() && !username.equals(user.getUsername())) {
+            if (userRepository.existsByUsername(username)) {
+                throw new RuntimeException("Username already taken");
+            }
+            user.setUsername(username);
+        }
         return mapToResponse(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserResponse addEmployeeToManager(Long managerId, Long employeeId) {
+        User manager = userRepository.findById(managerId)
+                .orElseThrow(() -> new RuntimeException("Manager not found"));
+        User employee = userRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        if (employee.getManager() != null) {
+            throw new RuntimeException("Employee is already assigned to manager: " + employee.getManager().getFullName());
+        }
+        employee.setManager(manager);
+        return mapToResponse(userRepository.save(employee));
+    }
+
+    @Transactional
+    public void removeEmployeeFromManager(Long managerId, Long employeeId) {
+        User employee = userRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        if (employee.getManager() == null || !employee.getManager().getId().equals(managerId)) {
+            throw new RuntimeException("This employee is not in your team");
+        }
+        employee.setManager(null);
+        userRepository.save(employee);
+    }
+
+    public List<UserResponse> getUnassignedEmployees() {
+        return userRepository.findByRoleAndManagerIsNull(Role.EMPLOYEE).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -182,6 +218,7 @@ public class UserService {
                 .managerId(user.getManager() != null ? user.getManager().getId() : null)
                 .managerName(user.getManager() != null ? user.getManager().getFullName() : null)
                 .archived(Boolean.TRUE.equals(user.isArchived()))
+                .targetAttendance(user.getTargetAttendance())
                 .build();
     }
 }

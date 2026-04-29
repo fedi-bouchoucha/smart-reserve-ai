@@ -126,4 +126,34 @@ public class ManagerController {
     public ResponseEntity<?> rejectDayOff(@PathVariable Long id) {
         return ResponseEntity.ok(dayOffService.rejectDayOff(id));
     }
+
+    @PostMapping("/employees/{employeeId}/add")
+    public ResponseEntity<?> addEmployeeToTeam(@PathVariable Long employeeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User manager = userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Manager not found"));
+            return ResponseEntity.ok(userService.addEmployeeToManager(manager.getId(), employeeId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/employees/{employeeId}/remove")
+    public ResponseEntity<?> removeEmployeeFromTeam(@PathVariable Long employeeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User manager = userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Manager not found"));
+            userService.removeEmployeeFromManager(manager.getId(), employeeId);
+            return ResponseEntity.ok(Map.of("message", "Employee removed from team"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/unassigned-employees")
+    public ResponseEntity<?> getUnassignedEmployees() {
+        return ResponseEntity.ok(userService.getUnassignedEmployees());
+    }
 }

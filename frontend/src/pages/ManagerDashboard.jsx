@@ -15,7 +15,9 @@ import {
   X,
   AlertCircle,
   Trash2,
-  Calendar
+  Calendar,
+  UserPlus,
+  UserMinus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,6 +34,9 @@ export default function ManagerDashboard() {
     const [selectedEmployee, setSelectedEmployee] = useState(null); // { id, fullName }
     const [empReservations, setEmpReservations] = useState([]);
     const [comment, setComment] = useState('');
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [unassignedEmployees, setUnassignedEmployees] = useState([]);
+    const [confirmRemove, setConfirmRemove] = useState(null);
 
     useEffect(() => {
         if (message.text) {
@@ -119,6 +124,42 @@ export default function ManagerDashboard() {
             loadData();
         } catch (e) {
             setMessage({ type: 'error', text: e.response?.data?.error || 'Action failed' });
+        }
+        setLoading(false);
+    };
+
+    const openAddEmployeeModal = async () => {
+        setShowAddModal(true);
+        try {
+            const res = await api.get('/manager/unassigned-employees');
+            setUnassignedEmployees(res.data);
+        } catch (e) {
+            setMessage({ type: 'error', text: 'Failed to load unassigned employees' });
+        }
+    };
+
+    const handleAddEmployee = async (employeeId) => {
+        setLoading(true);
+        try {
+            await api.post(`/manager/employees/${employeeId}/add`);
+            setMessage({ type: 'success', text: 'Employee added to your team!' });
+            setUnassignedEmployees(prev => prev.filter(e => e.id !== employeeId));
+            loadData();
+        } catch (e) {
+            setMessage({ type: 'error', text: e.response?.data?.error || 'Failed to add employee' });
+        }
+        setLoading(false);
+    };
+
+    const handleRemoveEmployee = async (employeeId) => {
+        setLoading(true);
+        try {
+            await api.delete(`/manager/employees/${employeeId}/remove`);
+            setMessage({ type: 'success', text: 'Employee removed from your team.' });
+            setConfirmRemove(null);
+            loadData();
+        } catch (e) {
+            setMessage({ type: 'error', text: e.response?.data?.error || 'Failed to remove employee' });
         }
         setLoading(false);
     };
@@ -331,45 +372,60 @@ export default function ManagerDashboard() {
                     </>
                 )}
                 {tab === 'team' && (
-                    <table className="table-ui">
-                        <thead>
-                            <tr>
-                                <th>Name / Username</th>
-                                <th>Email Address</th>
-                                <th>Role</th>
-                                <th style={{ textAlign: 'right' }}>Overview</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {employees.map(emp => (
-                                <tr key={emp.id}>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '99px', background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
-                                                {emp.fullName?.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: 600 }}>{emp.fullName}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>@{emp.username}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style={{ color: 'hsl(var(--muted-foreground))' }}>{emp.email}</td>
-                                    <td><div className="badge-ui" style={{ background: 'hsl(var(--secondary))' }}>{emp.role}</div></td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <button className="btn-ui btn-ghost btn-sm" onClick={() => loadEmployeeReservations(emp)}>
-                                            <span>View Logs</span>
-                                            <ChevronRight size={14} />
-                                        </button>
-                                        <button className="btn-ui btn-outline btn-sm" onClick={() => loadEmployeeReservations(emp)} style={{ marginLeft: '0.5rem' }}>
-                                            <Calendar size={14} />
-                                            <span>Reservations</span>
-                                        </button>
-                                    </td>
+                    <>
+                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid hsl(var(--border))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 600, color: 'hsl(var(--muted-foreground))', fontSize: '0.875rem' }}>{employees.length} team member{employees.length !== 1 ? 's' : ''}</span>
+                            <button className="btn-ui btn-primary btn-sm" onClick={openAddEmployeeModal}>
+                                <UserPlus size={16} />
+                                <span>Add Employee</span>
+                            </button>
+                        </div>
+                        <table className="table-ui">
+                            <thead>
+                                <tr>
+                                    <th>Name / Username</th>
+                                    <th>Email Address</th>
+                                    <th>Role</th>
+                                    <th style={{ textAlign: 'right' }}>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {employees.map(emp => (
+                                    <tr key={emp.id}>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '99px', background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
+                                                    {emp.fullName?.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 600 }}>{emp.fullName}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>@{emp.username}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ color: 'hsl(var(--muted-foreground))' }}>{emp.email}</td>
+                                        <td><div className="badge-ui" style={{ background: 'hsl(var(--secondary))' }}>{emp.role}</div></td>
+                                        <td style={{ textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                <button className="btn-ui btn-ghost btn-sm" onClick={() => loadEmployeeReservations(emp)}>
+                                                    <Calendar size={14} />
+                                                    <span>Reservations</span>
+                                                </button>
+                                                <button 
+                                                    className="btn-ui btn-outline btn-sm" 
+                                                    style={{ color: 'hsl(var(--destructive))', borderColor: 'hsl(var(--destructive) / 0.3)' }}
+                                                    onClick={() => setConfirmRemove(emp)}
+                                                >
+                                                    <UserMinus size={14} />
+                                                    <span>Remove</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </>
                 )}
             </div>
 
@@ -471,6 +527,109 @@ export default function ManagerDashboard() {
                                     disabled={loading}
                                 >
                                     {loading ? 'Processing...' : `Confirm ${commentModal.action}`}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Add Employee Modal */}
+            <AnimatePresence>
+                {showAddModal && (
+                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowAddModal(false)}>
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="modal-content modal-modern-content" 
+                            onClick={e => e.stopPropagation()} 
+                            style={{ maxWidth: '520px' }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{ background: 'hsl(var(--primary) / 0.1)', padding: '0.75rem', borderRadius: '0.75rem', color: 'hsl(var(--primary))' }}>
+                                        <UserPlus size={24} />
+                                    </div>
+                                    <div>
+                                        <h2 style={{ fontSize: '1.25rem' }}>Add Employee</h2>
+                                        <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Select from unassigned employees</p>
+                                    </div>
+                                </div>
+                                <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setShowAddModal(false)} />
+                            </div>
+
+                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                {unassignedEmployees.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '3rem' }}>
+                                        <div style={{ background: 'hsl(var(--secondary))', width: '56px', height: '56px', borderRadius: '99px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'hsl(var(--muted-foreground))' }}>
+                                            <Users size={28} />
+                                        </div>
+                                        <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.9rem' }}>No unassigned employees available.</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {unassignedEmployees.map(emp => (
+                                            <div key={emp.id} style={{ 
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                                padding: '0.75rem 1rem', borderRadius: 'var(--radius)', 
+                                                border: '1px solid hsl(var(--border))', 
+                                                transition: 'background 0.15s',
+                                                background: 'hsl(var(--card))'
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                    <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '99px', background: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.875rem' }}>
+                                                        {emp.fullName?.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{emp.fullName}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>@{emp.username} · {emp.email}</div>
+                                                    </div>
+                                                </div>
+                                                <button className="btn-ui btn-primary btn-sm" onClick={() => handleAddEmployee(emp.id)} disabled={loading}>
+                                                    <UserPlus size={14} />
+                                                    <span>Add</span>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+                                <button className="btn-ui btn-ghost" onClick={() => setShowAddModal(false)}>Close</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Remove Employee Confirmation Modal */}
+            <AnimatePresence>
+                {confirmRemove && (
+                    <div className="modal-overlay modal-modern-overlay" onClick={() => setConfirmRemove(null)}>
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="modal-content modal-modern-content" 
+                            onClick={e => e.stopPropagation()} 
+                            style={{ maxWidth: '400px' }}
+                        >
+                            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                                <div style={{ background: 'hsl(var(--destructive) / 0.1)', color: 'hsl(var(--destructive))', width: '3rem', height: '3rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                    <UserMinus size={24} />
+                                </div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Remove Employee</h2>
+                                <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', marginTop: '0.5rem' }}>
+                                    Are you sure you want to remove <strong>{confirmRemove.fullName}</strong> from your team?
+                                </p>
+                            </div>
+
+                            <div className="modal-actions">
+                                <button className="btn-ui btn-ghost" onClick={() => setConfirmRemove(null)}>Cancel</button>
+                                <button className="btn-ui btn-danger" onClick={() => handleRemoveEmployee(confirmRemove.id)} disabled={loading}>
+                                    {loading ? 'Removing…' : 'Remove'}
                                 </button>
                             </div>
                         </motion.div>
