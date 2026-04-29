@@ -113,9 +113,15 @@ public class PerformanceEngineService {
 
         // --- Compute sub-scores (each 0.0 - 10.0) ---
 
-        // 1. Booking consistency: ratio of confirmed bookings to expected workdays (minus days off)
-        int effectiveWorkdays = Math.max(1, EXPECTED_WORKDAYS - (int) dayOffCount);
-        double bookingRatio = Math.min(1.0, (double) confirmedCount / effectiveWorkdays);
+        // Calculate expected weekly days based on the user's targetAttendance percentage
+        Integer targetPct = user.getTargetAttendance();
+        if (targetPct == null) targetPct = 50; // Fallback
+        
+        double weeklyTargetRatio = targetPct / 100.0;
+        double expectedWeeklyDays = Math.max(1.0, EXPECTED_WORKDAYS * weeklyTargetRatio);
+
+        // 1. Booking consistency: ratio of confirmed bookings to their personal target
+        double bookingRatio = Math.min(1.0, (double) confirmedCount / expectedWeeklyDays);
         double bookingSubScore = bookingRatio * 10.0;
 
         // 2. Cancellation rate: lower is better
@@ -129,8 +135,8 @@ public class PerformanceEngineService {
         // We'll use a heuristic — how consistent is the booking pattern
         double planningSubScore = computePlanningSubScore(allReservations, weekStart);
 
-        // 5. Engagement score: active participation
-        double engagementSubScore = computeEngagementSubScore(confirmedCount, dayOffCount, effectiveWorkdays);
+        // 5. Engagement score: active participation relative to personal target
+        double engagementSubScore = Math.min(10.0, ((double) confirmedCount / expectedWeeklyDays) * 10.0);
 
         // --- Composite score ---
         double compositeScore = (bookingSubScore * WEIGHT_BOOKING)

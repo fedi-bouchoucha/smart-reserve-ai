@@ -52,8 +52,12 @@ public class DataInitializer implements CommandLineRunner {
         List<String> pct100 = List.of("ITE00000063", "ITE00000070", "ITE00000071");
 
         userRepository.findAll().forEach(u -> {
-            if (u.getUsername().startsWith("employee")) {
-                String iteId = u.getFullName(); // The full_name contains the ITE ID
+            if (u.getUsername().contains("empyee") || u.getUsername().contains("employee")) {
+                if (u.getUsername().equals("empoyee59")) {
+                    u.setUsername("employee59");
+                }
+                
+                String iteId = u.getFullName();
                 int target = 50;
                 if (pct20.contains(iteId)) target = 20;
                 else if (pct100.contains(iteId)) target = 100;
