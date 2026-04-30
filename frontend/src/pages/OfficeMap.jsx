@@ -4,8 +4,9 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Filter, X, CheckCircle2, AlertCircle, Layers,
-  MapPin, Calendar, Info
+  MapPin, Calendar, Info, Sparkles
 } from 'lucide-react';
+import SmartSuggestModal from '../components/SmartSuggestModal';
 
 const DESKS_DATA = [
   { id: '38', x: 40, y: 60, w: 45, h: 32, color: 'blue' },
@@ -91,6 +92,7 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
   const [filter, setFilter] = useState('all');
   const [hoveredDesk, setHoveredDesk] = useState(null);
   const [tooltip, setTooltip] = useState(null);
+  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const svgRef = useRef(null);
 
   useEffect(() => { if (message.text) { const t = setTimeout(() => setMessage({ type: '', text: '' }), 4000); return () => clearTimeout(t); } }, [message]);
@@ -250,6 +252,13 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: '#3b82f6' }} /> Available</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'hsl(var(--muted))' }} /> Occupied</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'hsl(var(--primary))' }} /> Selected</span>
+          <button 
+            onClick={() => setIsSuggestModalOpen(true)}
+            className="btn-ui btn-primary btn-sm" 
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', display: 'flex', gap: '0.4rem', alignItems: 'center', boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)' }}
+          >
+            <Sparkles size={14} /> AI Smart Suggest
+          </button>
         </div>
       </div>
 
@@ -419,6 +428,20 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
         ))}
       </div>
       )}
+      <SmartSuggestModal 
+        isOpen={isSuggestModalOpen}
+        onClose={() => setIsSuggestModalOpen(false)}
+        selectedDate={selectedDate}
+        availableDesks={empList.filter(e => e.emp?.available)}
+        onBook={(deskId) => {
+          setIsSuggestModalOpen(false);
+          const emp = emplacements[deskId];
+          handleDeskClick(deskId, emp);
+          if (emp && emp.chairId) {
+             handleBookChair(emp.chairId);
+          }
+        }}
+      />
     </div>
   );
 }

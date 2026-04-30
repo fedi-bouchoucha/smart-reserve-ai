@@ -13,6 +13,7 @@ import {
   PieChart,
   Building2,
   Brain,
+  Shield,
   Terminal
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -75,6 +76,12 @@ export default function Layout({ children }) {
             to: "/admin/analytics", 
             label: "Analytics", 
             icon: PieChart, 
+            roles: ['ADMIN'] 
+        },
+        { 
+            to: "/admin/security", 
+            label: "Security Monitor", 
+            icon: Shield, 
             roles: ['ADMIN'] 
         },
 

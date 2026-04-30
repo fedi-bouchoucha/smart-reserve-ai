@@ -24,6 +24,7 @@ It empowers employees to effortlessly book desks, while giving managers and admi
 - **📅 Interactive Booking Calendar:** Powered by FullCalendar with aesthetic, dynamic event management.
 - **📊 Analytics Dashboard:** Visualized utilization mapping and reporting via Recharts.
 - **🧠 Performance AI:** AI-powered behavioral insights, generating natural-language performance trajectory reports for administrators based on workspace utilization habits.
+- **🛡️ Cybersecurity Anomaly Detection:** Real-time AI security engine that tracks user behavior to detect threats like bot attacks, location jumps, off-hours access, and booking abuse, visualized via a dedicated Security Monitor SOC dashboard.
 - **🖼️ Profile Customization:** Personalized accounts, including base64 frictionless profile picture uploads.
 - **🔔 Real-time Notifications:** Instant feedback via WebSockets (STOMP) and automated Email alerts for reservation status changes.
 - **🌙 Theming & UI/UX:** Responsive, modern UI enhanced with Framer Motion animations and global Dark/Light modes.

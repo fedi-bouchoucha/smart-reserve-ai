@@ -14,6 +14,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import com.office.reservation.dto.ActivityLogRequest;
+import com.office.reservation.service.AnomalyDetectionService;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Map;
 
@@ -25,19 +28,22 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final AnomalyDetectionService anomalyDetectionService;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtUtil jwtUtil,
                           UserRepository userRepository,
-                          UserService userService) {
+                          UserService userService,
+                          AnomalyDetectionService anomalyDetectionService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.userService = userService;
+        this.anomalyDetectionService = anomalyDetectionService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
@@ -45,6 +51,9 @@ public class AuthController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+
+        // Track the login event asynchronously
+        trackLoginEvent(user, httpRequest);
 
         return ResponseEntity.ok(LoginResponse.builder()
                 .token(token)
@@ -73,6 +82,37 @@ public class AuthController {
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(userService.updateProfile(user.getId(), profileUpdate.get("fullName"), profileUpdate.get("email"), profileUpdate.get("profilePicture"), profileUpdate.get("username")));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(userService.findByUsername(userDetails.getUsername()));
+    }
+
+    private void trackLoginEvent(User user, HttpServletRequest request) {
+        try {
+            ActivityLogRequest logRequest = new ActivityLogRequest();
+            logRequest.setUserId(user.getId());
+            logRequest.setUsername(user.getUsername());
+            logRequest.setIpAddress(request.getRemoteAddr());
+            logRequest.setDeviceType(request.getHeader("User-Agent"));
+            
+            // Note: Login location could be extracted via a GeoIP service using the IP address,
+            // but for now we rely on the frontend sending it or leave it blank.
+            // If the frontend sent location in the login request, we would parse it here.
+            
+            logRequest.setRequestsLastMinute(anomalyDetectionService.trackRequest(user.getId()));
+            logRequest.setBookingActions(0);
+            logRequest.setCancellationActions(0);
+
+            Thread asyncThread = new Thread(() -> {
+                try {
+                    anomalyDetectionService.analyzeAndSave(logRequest);
+                } catch (Exception ignored) {}
+            });
+            asyncThread.setDaemon(true);
+            asyncThread.start();
+        } catch (Exception ignored) {}
     }
 
     @PostMapping("/forgot-password/request")
