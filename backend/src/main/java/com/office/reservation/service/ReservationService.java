@@ -89,13 +89,13 @@ public class ReservationService {
             String deskName = chairRepository.findById(request.getChairId())
                     .map(c -> c.getEmplacement().getName())
                     .orElse("");
-            if (deskName.equals("1") && !user.getUsername().equals("employee63")) {
+            if ((deskName.equals("1") || deskName.equalsIgnoreCase("E01")) && !user.getUsername().equalsIgnoreCase("employee63")) {
                 throw new RuntimeException("Desk 1 can only be reserved by employee63.");
             }
-            if (deskName.equals("43") && !user.getUsername().equals("employee70")) {
+            if ((deskName.equals("43") || deskName.equalsIgnoreCase("E43")) && !user.getUsername().equalsIgnoreCase("employee70")) {
                 throw new RuntimeException("Desk 43 can only be reserved by employee70.");
             }
-            if (deskName.equals("44") && !user.getUsername().equals("employee71")) {
+            if ((deskName.equals("44") || deskName.equalsIgnoreCase("E44")) && !user.getUsername().equalsIgnoreCase("employee71")) {
                 throw new RuntimeException("Desk 44 can only be reserved by employee71.");
             }
         }
@@ -107,18 +107,20 @@ public class ReservationService {
             YearMonth requestMonth = YearMonth.from(date);
             YearMonth currentMonth = YearMonth.from(today);
             
+            // Rule: Cannot book for current or past months
             if (!requestMonth.isAfter(currentMonth)) {
-                throw new RuntimeException("You cannot reserve a desk for the current month. You must book in advance for a future month.");
+                throw new RuntimeException("You cannot reserve a desk for the current or past months. Desk planning is only for the future.");
             }
             
-            // Rule: Only allow booking for the next month (applies ONLY to regular Employees)
+            // Rule: Employees can ONLY book for the month immediately following the current month
             if (user.getRole() == Role.EMPLOYEE) {
-                if (requestMonth.equals(currentMonth.plusMonths(1))) {
-                    if (today.getDayOfMonth() > 20) {
-                        finalStatus = ReservationStatus.PENDING_APPROVAL;
-                    }
-                } else {
-                    throw new RuntimeException("As an employee, you can only reserve a desk for the month immediately following the current month.");
+                if (!requestMonth.equals(currentMonth.plusMonths(1))) {
+                    throw new RuntimeException("As an employee, you can only reserve a desk for the month immediately following the current month (" + currentMonth.plusMonths(1).getMonth() + ").");
+                }
+                
+                // If booking after the 20th, it requires manager approval
+                if (today.getDayOfMonth() > 20) {
+                    finalStatus = ReservationStatus.PENDING_APPROVAL;
                 }
             } else {
                 // Admins and Managers can book any future month, but it stays pending if it's too far ahead or past the 20th
@@ -382,19 +384,19 @@ public class ReservationService {
         // Desk assignment constraints
         if (resourceId != null && "chair".equalsIgnoreCase(resourceType)) {
             String deskName = chairRepository.findById(resourceId).map(c -> c.getEmplacement().getName()).orElse("");
-            if (deskName.equals("1") && user != null && !user.getUsername().equals("employee63")) {
+            if ((deskName.equals("1") || deskName.equalsIgnoreCase("E01")) && user != null && !user.getUsername().equalsIgnoreCase("employee63")) {
                 for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
                     out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk 1 can only be reserved by employee63.", 0));
                 }
                 return out;
             }
-            if (deskName.equals("43") && user != null && !user.getUsername().equals("employee70")) {
+            if ((deskName.equals("43") || deskName.equalsIgnoreCase("E43")) && user != null && !user.getUsername().equalsIgnoreCase("employee70")) {
                 for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
                     out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk 43 can only be reserved by employee70.", 0));
                 }
                 return out;
             }
-            if (deskName.equals("44") && user != null && !user.getUsername().equals("employee71")) {
+            if ((deskName.equals("44") || deskName.equalsIgnoreCase("E44")) && user != null && !user.getUsername().equalsIgnoreCase("employee71")) {
                 for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
                     out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk 44 can only be reserved by employee71.", 0));
                 }

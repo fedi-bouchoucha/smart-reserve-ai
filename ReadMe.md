@@ -14,19 +14,14 @@ It empowers employees to effortlessly book desks, while giving managers and admi
 
 ---
 
-## ✨ Features
-
-- **🔒 Secure Authentication:** JWT-based login with role-based access control (RBAC).
-- **👥 Multi-tiered User Roles:**
-  - **Admin:** Complete system oversight, user management, and analytics viewing.
-  - **Manager:** Team management and reservation oversight.
-  - **Employee:** Can intuitively browse, book, and cancel workspace reservations.
-- **📅 Interactive Booking Calendar:** Powered by FullCalendar with aesthetic, dynamic event management.
-- **📊 Analytics Dashboard:** Visualized utilization mapping and reporting via Recharts.
-- **🧠 Performance AI:** AI-powered behavioral insights, generating natural-language performance trajectory reports for administrators based on workspace utilization habits.
-- **🛡️ Cybersecurity Anomaly Detection:** Real-time AI security engine that tracks user behavior to detect threats like bot attacks, location jumps, off-hours access, and booking abuse, visualized via a dedicated Security Monitor SOC dashboard.
-- **🖼️ Profile Customization:** Personalized accounts, including base64 frictionless profile picture uploads.
-- **🔔 Real-time Notifications:** Instant feedback via WebSockets (STOMP) and automated Email alerts for reservation status changes.
+##- **✨ AI Smart Suggest:** Intelligent workspace recommendation engine. Leverages a hybrid LLM/Heuristic approach to suggest the perfect desk based on user preferences, team proximity, and historical behavior.
+- **🗺️ Interactive Office Map:** Fully dynamic SVG floor plan allowing visual desk selection, real-time availability tracking, and spatial constraint enforcement.
+- **📅 Smart Booking Windows:** 
+  - **1st-20th Priority Window:** Employees must plan their monthly attendance during the priority window.
+  - **Auto-Approval vs Manager-Review:** Reservations submitted after the 20th of the month automatically pivot to a "Pending Approval" status requiring manager verification.
+  - **Next-Month Enforcement:** Role-based logic ensures employees focus on the immediate next month for workspace stability.
+- **🔒 VIP Desk Protection:** Granular desk-level access control (e.g., specific desks reserved for key personnel like `employee63`, `employee70`, `employee71`).
+- **🛡️ Cybersecurity Anomaly Detection:** Real-time AI security engine that tracks user behavior to detect threats like bot attacks, location jumps, and booking abuse, visualized via a dedicated Security Monitor SOC dashboard.
 - **🌙 Theming & UI/UX:** Responsive, modern UI enhanced with Framer Motion animations and global Dark/Light modes.
 
 ---
@@ -145,6 +140,7 @@ With the backend active, visit the interactive Swagger UI panel:
 ## 🚀 Future Improvements Roadmap
 
 - [x] Interactive structural office map allowing spatial desk-clicking reservations.
+- [x] AI Smart Suggest engine with hybrid heuristic fallback.
 - [ ] Implement Redis server caching to offload intense analytical operations.
 
 ---

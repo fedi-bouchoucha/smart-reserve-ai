@@ -104,6 +104,52 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
   useEffect(() => { loadAvailability(); }, [selectedDate]);
 
   const loadAvailability = async () => {
+    const selDate = new Date(selectedDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Past Date Check
+    if (selDate < today) {
+      setAvailableChairs([]);
+      setMessage({ type: 'error', text: "Cannot reserve or view availability for past dates." });
+      setLoading(false);
+      return;
+    }
+
+    // 2. Weekend Check
+    const day = selDate.getDay();
+    if (day === 0 || day === 6) {
+      setAvailableChairs([]);
+      setMessage({ type: 'error', text: "The office is closed on weekends. No desks available." });
+      setLoading(false);
+      return;
+    }
+
+    // 3. Next Month Only Enforcement (Employees)
+    if (user?.role === 'EMPLOYEE') {
+      const currentYM = today.getFullYear() * 12 + today.getMonth();
+      const selYM = selDate.getFullYear() * 12 + selDate.getMonth();
+      
+      if (selYM !== currentYM + 1) {
+        setAvailableChairs([]);
+        const nextMonthName = new Date(today.getFullYear(), today.getMonth() + 1).toLocaleDateString('en-US', { month: 'long' });
+        setMessage({ 
+          type: 'error', 
+          text: `Desk reservations are currently only open for ${nextMonthName}.` 
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 4. Booking Window Warning (After 20th)
+      if (today.getDate() > 20) {
+        setMessage({
+          type: 'info',
+          text: "The regular booking window (1st-20th) has passed. Your reservation will require manager approval."
+        });
+      }
+    }
+
     setLoading(true);
     try {
       const availRes = await api.get(`/reservations/available/chairs/${selectedDate}`);
@@ -119,10 +165,10 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
       map[name] = { name, chairs: [] };
     }
     availableChairs.forEach(c => {
-      const empName = c.emplacementName;
+      const empName = c.emplacement?.name || c.emplacementName;
       if (map[empName]) {
-        map[empName].floor = c.floor;
-        map[empName].emplacementId = c.emplacementId;
+        map[empName].floor = c.emplacement?.floor || c.floor;
+        map[empName].emplacementId = c.emplacement?.id || c.emplacementId;
         map[empName].chairs.push({ id: c.id, number: c.number, available: true });
       }
     });
@@ -130,7 +176,17 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
       if (emp.chairs.length === 0) {
         emp.chairs.push({ id: null, number: 1, available: false });
       }
-      emp.available = emp.chairs[0].available;
+      
+      let isAvailable = emp.chairs[0].available;
+      
+      // Enforce VIP Desk Restrictions
+      if (user) {
+        if (emp.name === "1" && user.username !== "employee63") isAvailable = false;
+        if (emp.name === "43" && user.username !== "employee70") isAvailable = false;
+        if (emp.name === "44" && user.username !== "employee71") isAvailable = false;
+      }
+
+      emp.available = isAvailable;
       emp.chairId = emp.chairs[0].id;
     });
     return map;
