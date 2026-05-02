@@ -231,6 +231,11 @@ public class ReservationService {
             throw new RuntimeException("Cannot book a meeting room for a past time slot.");
         }
 
+        // Weekends check
+        if (request.getDate().getDayOfWeek() == DayOfWeek.SATURDAY || request.getDate().getDayOfWeek() == DayOfWeek.SUNDAY) {
+            throw new RuntimeException("Meeting rooms are closed on weekends.");
+        }
+
         // Only check: is the room available at this time?
         if (reservationRepository.existsOverlappingRoomReservation(request.getMeetingRoomId(), request.getDate(), start, end)) {
             throw new RuntimeException("This meeting room is already booked for the selected time slot.");

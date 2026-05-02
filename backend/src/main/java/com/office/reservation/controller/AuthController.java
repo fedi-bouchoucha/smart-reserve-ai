@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import com.office.reservation.dto.ActivityLogRequest;
 import com.office.reservation.service.AnomalyDetectionService;
+import com.office.reservation.service.GeoLocationService;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Map;
@@ -29,17 +30,20 @@ public class AuthController {
     private final UserRepository userRepository;
     private final UserService userService;
     private final AnomalyDetectionService anomalyDetectionService;
+    private final GeoLocationService geoLocationService;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtUtil jwtUtil,
                           UserRepository userRepository,
                           UserService userService,
-                          AnomalyDetectionService anomalyDetectionService) {
+                          AnomalyDetectionService anomalyDetectionService,
+                          GeoLocationService geoLocationService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.userService = userService;
         this.anomalyDetectionService = anomalyDetectionService;
+        this.geoLocationService = geoLocationService;
     }
 
     @PostMapping("/login")
@@ -94,12 +98,10 @@ public class AuthController {
             ActivityLogRequest logRequest = new ActivityLogRequest();
             logRequest.setUserId(user.getId());
             logRequest.setUsername(user.getUsername());
-            logRequest.setIpAddress(request.getRemoteAddr());
+            String ip = request.getRemoteAddr();
+            logRequest.setIpAddress(ip);
+            logRequest.setLoginLocation(geoLocationService.getLocation(ip));
             logRequest.setDeviceType(request.getHeader("User-Agent"));
-            
-            // Note: Login location could be extracted via a GeoIP service using the IP address,
-            // but for now we rely on the frontend sending it or leave it blank.
-            // If the frontend sent location in the login request, we would parse it here.
             
             logRequest.setRequestsLastMinute(anomalyDetectionService.trackRequest(user.getId()));
             logRequest.setBookingActions(0);

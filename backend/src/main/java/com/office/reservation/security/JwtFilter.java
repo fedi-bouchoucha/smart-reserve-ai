@@ -4,6 +4,7 @@ import com.office.reservation.dto.ActivityLogRequest;
 import com.office.reservation.entity.User;
 import com.office.reservation.repository.UserRepository;
 import com.office.reservation.service.AnomalyDetectionService;
+import com.office.reservation.service.GeoLocationService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +28,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
     private final AnomalyDetectionService anomalyDetectionService;
+    private final GeoLocationService geoLocationService;
     private final UserRepository userRepository;
 
     // Track booking/cancellation counts per user session
@@ -36,10 +38,12 @@ public class JwtFilter extends OncePerRequestFilter {
     public JwtFilter(JwtUtil jwtUtil,
                      CustomUserDetailsService userDetailsService,
                      AnomalyDetectionService anomalyDetectionService,
+                     GeoLocationService geoLocationService,
                      UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
         this.anomalyDetectionService = anomalyDetectionService;
+        this.geoLocationService = geoLocationService;
         this.userRepository = userRepository;
     }
 
@@ -98,7 +102,9 @@ public class JwtFilter extends OncePerRequestFilter {
                 logRequest.setUserId(user.getId());
                 logRequest.setUsername(username);
                 logRequest.setTimestamp(LocalDateTime.now().toString());
-                logRequest.setIpAddress(extractClientIp(request));
+                String ip = extractClientIp(request);
+                logRequest.setIpAddress(ip);
+                logRequest.setLoginLocation(geoLocationService.getLocation(ip));
                 logRequest.setDeviceType(parseDeviceType(request.getHeader("User-Agent")));
                 logRequest.setRequestsLastMinute(requestsPerMinute);
                 logRequest.setBookingActions(bookingCounts.getOrDefault(user.getId(), new AtomicInteger(0)).get());

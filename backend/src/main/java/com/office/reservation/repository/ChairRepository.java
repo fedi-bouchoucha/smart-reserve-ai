@@ -19,4 +19,6 @@ public interface ChairRepository extends JpaRepository<Chair, Long> {
                                    @Param("startTime") LocalTime startTime, 
                                    @Param("endTime") LocalTime endTime,
                                    @Param("excludedStatuses") List<ReservationStatus> excludedStatuses);
+
+    List<Chair> findByEmplacementId(Long emplacementId);
 }

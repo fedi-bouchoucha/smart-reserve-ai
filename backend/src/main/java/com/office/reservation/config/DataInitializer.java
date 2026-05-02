@@ -108,6 +108,13 @@ public class DataInitializer implements CommandLineRunner {
                     existingEmp.setFloor(floor);
                     emplacementRepository.save(existingEmp);
                 }
+                // Also update the chair number if it was 1
+                chairRepository.findByEmplacementId(existingEmp.getId()).forEach(c -> {
+                    if (c.getNumber() == 1 && !name.equals("1")) {
+                        c.setNumber(Integer.parseInt(name));
+                        chairRepository.save(c);
+                    }
+                });
                 continue;
             }
 
@@ -117,10 +124,23 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
 
             chairRepository.save(Chair.builder()
-                    .number(1)
+                    .number(i)
                     .emplacement(emp)
                     .build());
         }
+
+        // Cleanup: Delete any emplacements > 44 (like 72 if created)
+        emplacementRepository.findAll().forEach(emp -> {
+            try {
+                int num = Integer.parseInt(emp.getName());
+                if (num > 44) {
+                    chairRepository.findByEmplacementId(emp.getId()).forEach(c -> chairRepository.delete(c));
+                    emplacementRepository.delete(emp);
+                }
+            } catch (NumberFormatException e) {
+                // Not a numeric desk, ignore (like 'Meeting Room' if it were an emplacement)
+            }
+        });
         
         System.out.println("=== Workspace Initialization Sync (44 Desks on Floor 3) ===");
     }

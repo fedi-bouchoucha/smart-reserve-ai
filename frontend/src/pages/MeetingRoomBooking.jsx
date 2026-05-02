@@ -147,12 +147,14 @@ export default function MeetingRoomBooking() {
                     <FullCalendar
                         plugins={[dayGridPlugin, interactionPlugin]}
                         initialView="dayGridMonth"
-                        firstDay={1}
+                        hiddenDays={[0, 6]}
                         validRange={{ start: new Date().toISOString().split('T')[0] }}
                         events={calendarEvents}
                         dateClick={(info) => {
                             const todayStr = new Date().toLocaleDateString('en-CA');
                             if (info.dateStr < todayStr) return;
+                            const d = new Date(info.dateStr);
+                            if (d.getDay() === 0 || d.getDay() === 6) return; // Saturday/Sunday
                             setSelectedDate(info.dateStr);
                         }}
                         dayCellClassNames={(arg) => {

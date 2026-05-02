@@ -188,6 +188,7 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
 
       emp.available = isAvailable;
       emp.chairId = emp.chairs[0].id;
+      emp.chairNumber = emp.chairs[0].number;
     });
     return map;
   }, [availableChairs]);
@@ -220,7 +221,7 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
   const handleBookChair = async (chairId) => {
     if (!chairId) return;
     if (pickerMode && onChairSelected) {
-      onChairSelected({ id: chairId, number: 1, floor: 3, emplacementName: selectedDesk.deskId });
+      onChairSelected({ id: chairId, number: selectedDesk.emp.chairNumber, floor: 3, emplacementName: selectedDesk.deskId });
       return;
     }
     setBookingLoading(true);
