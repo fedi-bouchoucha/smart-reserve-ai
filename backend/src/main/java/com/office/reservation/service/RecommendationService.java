@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.office.reservation.service.scoring.ScoringFactor;
+import com.office.reservation.service.scoring.ScoringResult;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,7 @@ public class RecommendationService {
     private final ReservationRepository reservationRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final List<ScoringFactor> scoringFactors;
 
     @Value("${app.llm.api-url}")
     private String apiUrl;
@@ -36,8 +39,9 @@ public class RecommendationService {
     @Value("${app.llm.model}")
     private String modelName;
 
-    public RecommendationService(ReservationRepository reservationRepository) {
+    public RecommendationService(ReservationRepository reservationRepository, List<ScoringFactor> scoringFactors) {
         this.reservationRepository = reservationRepository;
+        this.scoringFactors = scoringFactors;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
@@ -83,13 +87,9 @@ public class RecommendationService {
                     "1. Analyze all inputs and rank the best options.\n" +
                     "2. Recommend the top 3 most suitable desks or rooms.\n" +
                     "3. Assign a relevance score (0–100) to each recommendation.\n" +
-                    "4. Explain briefly why each option is recommended.\n\n" +
-                    "DECISION FACTORS:\n" +
-                    "- Match with user preferences\n" +
-                    "- Similarity to past behavior\n" +
-                    "- Proximity to team members\n" +
-                    "- Fit with requested time and capacity\n" +
-                    "- Resource optimization (avoid overcrowding)\n\n" +
+                    "4. Assign a confidence score (0.0–1.0).\n" +
+                    "5. Provide a detailed score breakdown for each factor.\n" +
+                    "6. List clear reasons for the recommendation.\n\n" +
                     "OUTPUT FORMAT (JSON ONLY):\n" +
                     "{\n" +
                     "  \"recommendations\": [\n" +
@@ -97,7 +97,10 @@ public class RecommendationService {
                     "      \"resourceId\": \"string\",\n" +
                     "      \"type\": \"desk or meeting_room\",\n" +
                     "      \"score\": number,\n" +
-                    "      \"reason\": \"short explanation\"\n" +
+                    "      \"confidence\": number,\n" +
+                    "      \"reason\": \"Summary explanation\",\n" +
+                    "      \"reasons\": [\"Factor explanation 1\", \"Factor explanation 2\"],\n" +
+                    "      \"scoreBreakdown\": {\"teamProximity\": 40, \"preferences\": 30, \"history\": 22}\n" +
                     "    }\n" +
                     "  ]\n" +
                     "}";
@@ -147,91 +150,52 @@ public class RecommendationService {
                 ? request.getCurrentRequest().getNumberOfPeople() : 1;
 
         for (RecommendationRequest.RealTimeAvailability resource : request.getRealTimeAvailability()) {
-            int score = 0;
+            Map<String, Integer> breakdown = new java.util.HashMap<>();
             List<String> reasons = new java.util.ArrayList<>();
+            
+            double totalWeightedScore = 0;
+            int totalWeight = 0;
+            int factorsWithPositiveScore = 0;
 
-            // 1. Capacity check for meeting rooms
+            for (ScoringFactor factor : scoringFactors) {
+                ScoringResult result = factor.calculate(resource, request);
+                int contribution = (result.score() * factor.getWeight()) / 100;
+                
+                breakdown.put(factor.getName(), contribution);
+                if (result.score() > 0) {
+                    totalWeightedScore += contribution;
+                    factorsWithPositiveScore++;
+                    if (result.reason() != null) {
+                        reasons.add(result.reason());
+                    }
+                }
+                totalWeight += factor.getWeight();
+            }
+
+            // 1. Capacity check for meeting rooms (Hard Constraint - overrides score if failed)
             if ("meeting_room".equalsIgnoreCase(reqType)) {
                 if (resource.getCapacity() != null && resource.getCapacity() < reqCapacity) {
-                    continue; // Skip if it cannot fit the team
-                }
-                if (resource.getCapacity() != null && resource.getCapacity() >= reqCapacity) {
-                    // Resource optimization: avoid booking a 20-person room for 2 people
-                    if (resource.getCapacity() <= reqCapacity + 2) {
-                        score += 15;
-                        reasons.add("Perfect capacity fit");
-                    } else {
-                        score += 5; // Fits, but too large
-                        reasons.add("Sufficient capacity (oversized)");
-                    }
+                    continue; 
                 }
             }
 
-            // 2. Preferences Match
-            if (request.getUserPreferences() != null) {
-                // Preferred Zone
-                if (request.getUserPreferences().getPreferredZone() != null 
-                        && request.getUserPreferences().getPreferredZone().equalsIgnoreCase(resource.getZone())) {
-                    score += 25;
-                    reasons.add("Matches preferred zone (" + resource.getZone() + ")");
-                }
-
-                // Preferred Floor
-                if (request.getUserPreferences().getPreferredFloor() != null 
-                        && request.getUserPreferences().getPreferredFloor().equalsIgnoreCase(resource.getFloor())) {
-                    score += 15;
-                    reasons.add("On preferred floor (" + resource.getFloor() + ")");
-                }
-
-                // Equipment Needs
-                if (request.getUserPreferences().getEquipmentNeeds() != null 
-                        && resource.getEquipment() != null) {
-                    long matchedEquip = request.getUserPreferences().getEquipmentNeeds().stream()
-                            .filter(eq -> resource.getEquipment().contains(eq))
-                            .count();
-                    if (matchedEquip > 0) {
-                        score += (matchedEquip * 10);
-                        reasons.add("Has requested equipment");
-                    }
-                }
-            }
-
-            // 3. Proximity to team
-            if (Boolean.TRUE.equals(resource.getProximityToTeam())) {
-                score += 20;
-                reasons.add("Close to team members");
-            }
-
-            // 4. Historical Behavior
-            if (request.getHistoricalBehavior() != null) {
-                if ("desk".equalsIgnoreCase(reqType) && request.getHistoricalBehavior().getFrequentlyBookedDesks() != null) {
-                    if (request.getHistoricalBehavior().getFrequentlyBookedDesks().contains(resource.getId())) {
-                        score += 10;
-                        reasons.add("Frequently booked in the past");
-                        // Introduce diversity by slightly capping score for overused desks
-                        score -= 5;
-                    }
-                } else if ("meeting_room".equalsIgnoreCase(reqType) && request.getHistoricalBehavior().getFrequentlyUsedRooms() != null) {
-                    if (request.getHistoricalBehavior().getFrequentlyUsedRooms().contains(resource.getId())) {
-                        score += 10;
-                        reasons.add("Frequently used room");
-                    }
-                }
-            }
+            int finalScore = (int) Math.min(totalWeightedScore, 100);
+            double confidence = (factorsWithPositiveScore > 0) ? (0.7 + (0.3 * (factorsWithPositiveScore / (double) scoringFactors.size()))) : 0.5;
 
             // Base fallback reason if nothing matched
             if (reasons.isEmpty()) {
-                score += 5; // Base score just for being available
+                finalScore = 5;
                 reasons.add("Available resource");
             }
-
-            score = Math.min(score, 100);
 
             scoredItems.add(RecommendationItem.builder()
                     .resourceId(resource.getId())
                     .type(reqType)
-                    .score(score)
-                    .reason(String.join(" | ", reasons))
+                    .score(finalScore)
+                    .confidence(confidence)
+                    .reason(reasons.isEmpty() ? "Good match" : reasons.get(0))
+                    .reasons(reasons)
+                    .scoreBreakdown(breakdown)
                     .build());
         }
 

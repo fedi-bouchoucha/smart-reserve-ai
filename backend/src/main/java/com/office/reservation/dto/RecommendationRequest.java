@@ -31,6 +31,7 @@ public class RecommendationRequest {
         private String preferredZone;
         private String preferredFloor;
         private List<String> equipmentNeeds;
+        private String preferredNoiseLevel;
 
         public UserPreferences() {}
 
@@ -42,6 +43,9 @@ public class RecommendationRequest {
 
         public List<String> getEquipmentNeeds() { return equipmentNeeds; }
         public void setEquipmentNeeds(List<String> equipmentNeeds) { this.equipmentNeeds = equipmentNeeds; }
+
+        public String getPreferredNoiseLevel() { return preferredNoiseLevel; }
+        public void setPreferredNoiseLevel(String preferredNoiseLevel) { this.preferredNoiseLevel = preferredNoiseLevel; }
     }
 
     public static class HistoricalBehavior {
@@ -89,6 +93,8 @@ public class RecommendationRequest {
         private Integer capacity;
         private List<String> equipment;
         private Boolean proximityToTeam;
+        private String noiseLevel;
+        private Boolean proximityToDepartment;
 
         public RealTimeAvailability() {}
 
@@ -109,5 +115,11 @@ public class RecommendationRequest {
 
         public Boolean getProximityToTeam() { return proximityToTeam; }
         public void setProximityToTeam(Boolean proximityToTeam) { this.proximityToTeam = proximityToTeam; }
+
+        public String getNoiseLevel() { return noiseLevel; }
+        public void setNoiseLevel(String noiseLevel) { this.noiseLevel = noiseLevel; }
+
+        public Boolean getProximityToDepartment() { return proximityToDepartment; }
+        public void setProximityToDepartment(Boolean proximityToDepartment) { this.proximityToDepartment = proximityToDepartment; }
     }
 }

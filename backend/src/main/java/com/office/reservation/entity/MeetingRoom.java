@@ -17,14 +17,23 @@ public class MeetingRoom {
 
     private Integer floor;
 
+    @ElementCollection
+    @CollectionTable(name = "room_equipment", joinColumns = @JoinColumn(name = "room_id"))
+    @Column(name = "equipment")
+    private java.util.List<String> equipment;
+
+    private String noiseLevel;
+
     public MeetingRoom() {
     }
 
-    public MeetingRoom(Long id, String name, Integer capacity, Integer floor) {
+    public MeetingRoom(Long id, String name, Integer capacity, Integer floor, java.util.List<String> equipment, String noiseLevel) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
         this.floor = floor;
+        this.equipment = equipment;
+        this.noiseLevel = noiseLevel;
     }
 
     public Long getId() {
@@ -59,6 +68,22 @@ public class MeetingRoom {
         this.floor = floor;
     }
 
+    public java.util.List<String> getEquipment() {
+        return equipment;
+    }
+
+    public void setEquipment(java.util.List<String> equipment) {
+        this.equipment = equipment;
+    }
+
+    public String getNoiseLevel() {
+        return noiseLevel;
+    }
+
+    public void setNoiseLevel(String noiseLevel) {
+        this.noiseLevel = noiseLevel;
+    }
+
     public static MeetingRoomBuilder builder() {
         return new MeetingRoomBuilder();
     }
@@ -68,6 +93,8 @@ public class MeetingRoom {
         private String name;
         private Integer capacity;
         private Integer floor;
+        private java.util.List<String> equipment;
+        private String noiseLevel;
 
         public MeetingRoomBuilder id(Long id) {
             this.id = id;
@@ -89,8 +116,18 @@ public class MeetingRoom {
             return this;
         }
 
+        public MeetingRoomBuilder equipment(java.util.List<String> equipment) {
+            this.equipment = equipment;
+            return this;
+        }
+
+        public MeetingRoomBuilder noiseLevel(String noiseLevel) {
+            this.noiseLevel = noiseLevel;
+            return this;
+        }
+
         public MeetingRoom build() {
-            return new MeetingRoom(id, name, capacity, floor);
+            return new MeetingRoom(id, name, capacity, floor, equipment, noiseLevel);
         }
     }
 }
