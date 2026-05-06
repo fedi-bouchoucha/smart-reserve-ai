@@ -49,7 +49,8 @@ public class ReservationService {
                               HomeOfficeRepository homeOfficeRepository,
                               ConflictResolver conflictResolver,
                               ApplicationEventPublisher eventPublisher,
-                              DistributedLockService lockService) {
+                              DistributedLockService lockService,
+                              FirebaseNotificationService notificationService) {
         this.reservationRepository = reservationRepository;
         this.chairRepository = chairRepository;
         this.meetingRoomRepository = meetingRoomRepository;
