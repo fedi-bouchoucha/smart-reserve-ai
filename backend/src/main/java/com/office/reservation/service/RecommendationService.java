@@ -43,7 +43,8 @@ public class RecommendationService {
         this.reservationRepository = reservationRepository;
         this.scoringFactors = scoringFactors;
         this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     // Existing simple method for backwards compatibility

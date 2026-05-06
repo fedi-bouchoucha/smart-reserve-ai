@@ -158,10 +158,41 @@ export default function SmartSuggestModal({ isOpen, onClose, selectedDate, avail
                       <span style={{ fontSize: '0.75rem', padding: '0.1rem 0.5rem', background: 'hsl(var(--muted))', borderRadius: '10px', color: 'hsl(var(--muted-foreground))' }}>
                         {rec.type}
                       </span>
+                      {rec.confidence && (
+                        <span style={{ fontSize: '0.7rem', color: 'hsl(var(--primary))', fontWeight: 600 }}>
+                          {Math.round(rec.confidence * 100)}% Confidence
+                        </span>
+                      )}
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', margin: '0 0 1rem 0', lineHeight: 1.5 }}>
-                      {rec.reason}
-                    </p>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1rem' }}>
+                      {(rec.reasons || [rec.reason]).map((reason, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>
+                          <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'hsl(var(--primary))' }} />
+                          {reason}
+                        </div>
+                      ))}
+                    </div>
+
+                    {rec.scoreBreakdown && (
+                      <div style={{ 
+                        marginBottom: '1rem', padding: '0.75rem', background: 'hsl(var(--background))', 
+                        borderRadius: '8px', border: '1px dashed hsl(var(--border))'
+                      }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--muted-foreground))', marginBottom: '0.5rem' }}>
+                          Score Breakdown
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.25rem' }}>
+                          {Object.entries(rec.scoreBreakdown).map(([factor, score]) => (
+                            <React.Fragment key={factor}>
+                              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>{factor.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>+{score}</span>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <button 
                         onClick={() => onBook(rec.resourceId)}
