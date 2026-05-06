@@ -39,6 +39,6 @@ public class NotificationListener {
         notificationService.sendEmailNotification(user, title, message);
         
         // Send Push
-        notificationService.sendPushNotification(user, "Your reservation for " + event.getResourceInfo() + " on " + event.getDate() + " was " + statusLabel + ".");
+        notificationService.sendPushNotification(user, title, "Your reservation for " + event.getResourceInfo() + " on " + event.getDate() + " was " + statusLabel + ".");
     }
 }

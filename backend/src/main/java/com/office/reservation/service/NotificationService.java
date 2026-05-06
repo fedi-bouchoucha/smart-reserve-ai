@@ -70,7 +70,7 @@ public class NotificationService {
 
     @Async
     @Transactional
-    public void sendPushNotification(User user, String message) {
+    public void sendPushNotification(User user, String title, String message) {
         Notification notification = new Notification();
         notification.setUser(user);
         notification.setMessage(message);
@@ -81,11 +81,11 @@ public class NotificationService {
             messagingTemplate.convertAndSendToUser(
                     user.getUsername(), 
                     "/topic/notifications", 
-                    Map.of("message", message, "timestamp", notification.getTimestamp())
+                    Map.of("title", title, "message", message, "timestamp", notification.getTimestamp())
             );
 
             // Trigger real FCM Push Notification
-            firebaseNotificationService.sendPushNotification(user, "Smart Office Update", message);
+            firebaseNotificationService.sendPushNotification(user, title, message);
 
             notification.setStatus(Notification.NotificationStatus.SENT);
         } catch (Exception e) {
