@@ -14,7 +14,11 @@ It empowers employees to effortlessly book desks, while giving managers and admi
 
 ---
 
-##- **✨ AI Smart Suggest:** Intelligent workspace recommendation engine. Leverages a hybrid LLM/Heuristic approach to suggest the perfect desk based on user preferences, team proximity, and historical behavior.
+## ✨ Key Features
+
+- **🔴 Redis Distributed Concurrency:** Production-grade booking engine using **Redisson** for distributed locking. Prevents double-bookings and race conditions in high-traffic environments.
+- **⚡ Multi-Layer Caching:** Integrated Spring Cache with Redis to accelerate desk availability checks, AI recommendation results, and performance analytics.
+- **✨ AI Smart Suggest:** Intelligent workspace recommendation engine. Leverages a hybrid LLM/Heuristic approach to suggest the perfect desk based on user preferences, team proximity, and historical behavior.
 - **🗺️ Interactive Office Map:** Fully dynamic SVG floor plan allowing visual desk selection, real-time availability tracking, and spatial constraint enforcement.
 - **📅 Smart Booking Windows:** 
   - **1st-20th Priority Window:** Employees must plan their monthly attendance during the priority window.
@@ -38,20 +42,21 @@ It empowers employees to effortlessly book desks, while giving managers and admi
 
 ### Backend
 - **Core:** Java 17 + Spring Boot 3.2.2
+- **Concurrency & Caching:** **Redis + Redisson**
 - **Security:** Spring Security + JWT (JSON Web Tokens)
 - **Database ORM:** Spring Data JPA
 - **Database Engine:** PostgreSQL
 - **API Documentation:** Swagger / Springdoc OpenAPI
 - **Document Generation:** OpenPDF
-- **Utilities:** Lombok
 
 ---
 
 ## 🏗️ Architecture Overview
 
 This project embodies a decoupled client-server architecture:
-1. **Frontend (SPA):** A Single Page Application handling routing securely, preserving standard JSON Web Tokens in isolated memory/local storage to validate requests statelessly.
-2. **Backend (REST API):** A strictly typed Spring Boot RESTful interface servicing resource-oriented payload manipulation, secured globally through an internal filter chain validation strategy.
+1. **Frontend (SPA):** A Single Page Application handling routing securely, preserving standard JSON Web Tokens in isolated memory/local storage.
+2. **Backend (REST API):** A strictly typed Spring Boot RESTful interface servicing resource-oriented payload manipulation.
+3. **In-Memory Store (Redis):** Acts as a distributed lock manager and high-speed cache for volatile state (availability, session-locks, AI scores).
 
 ---
 
@@ -62,15 +67,19 @@ Before starting, ensure you have the following installed on your machine:
 - **Maven 3.8+**
 - **Node.js (v18+) & npm**
 - **PostgreSQL (v13+)**
+- **Redis (v6+)** (Required for booking concurrency and caching)
 
 ---
 
 ## 🚀 Installation & Setup
 
-### 1. Database Initialization
-Ensure PostgreSQL is running. Create a new database named `smart_office_db` and ensure the role `smart_user` possesses sufficient access to it.
+### 1. Services Setup
+Ensure both **PostgreSQL** and **Redis** are running on their default ports (5432 and 6379).
 
-### 2. Backend Setup
+### 2. Database Initialization
+Create a new database named `smart_office_db` and ensure the role `smart_user` possesses sufficient access to it.
+
+### 3. Backend Setup
 Open a terminal and navigate to the backend directory:
 ```bash
 cd backend
@@ -79,7 +88,7 @@ mvn spring-boot:run
 ```
 The backend API should now be running cleanly on `http://localhost:8080`.
 
-### 3. Frontend Setup
+### 4. Frontend Setup
 Open a separate terminal and navigate to the frontend directory:
 ```bash
 cd frontend
@@ -113,19 +122,6 @@ To run the tests locally:
 ```bash
 npx playwright test
 ```
-To open the interactive UI mode for debugging:
-```bash
-npx playwright test --ui
-```
-
----
-
-## 📚 API Documentation
-
-The backend leverages OpenAPI standards to self-document standard endpoint structures and required HTTP payload definitions.
-
-With the backend active, visit the interactive Swagger UI panel:
-👉 **[http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)**
 
 ---
 
@@ -133,7 +129,7 @@ With the backend active, visit the interactive Swagger UI panel:
 
 - **Stateless Verification:** All secured endpoints require an `Authorization: Bearer <token>` header payload.
 - **CORS Protection:** Enforced origin limitation in production prevents cross-origin abuses.
-- **Image handling:** Base64 Profile pictures are processed internally to DB text streams to prevent malicious direct execution paths via physical file storage vulnerabilities.
+- **Image handling:** Base64 Profile pictures are processed internally to DB text streams to prevent malicious direct execution paths.
 
 ---
 
@@ -141,7 +137,8 @@ With the backend active, visit the interactive Swagger UI panel:
 
 - [x] Interactive structural office map allowing spatial desk-clicking reservations.
 - [x] AI Smart Suggest engine with hybrid heuristic fallback.
-- [ ] Implement Redis server caching to offload intense analytical operations.
+- [x] Implement Redis server caching to offload intense analytical operations.
+- [ ] Implement Push Notifications for reservation approvals.
 
 ---
 
@@ -150,8 +147,8 @@ With the backend active, visit the interactive Swagger UI panel:
 We highly encourage improvements and optimizations:
 1. **Fork** the repository.
 2. **Create** your dedicated feature branch (`git checkout -b feature/AmazingFeature`).
-3. **Commit** your changes cleanly (`git commit -m 'Add some AmazingFeature'`).
-4. **Push** to the branch (`git push origin feature/AmazingFeature`).
+3. **Commit** your changes cleanly.
+4. **Push** to the branch.
 5. Open a **Pull Request**.
 
 ---
