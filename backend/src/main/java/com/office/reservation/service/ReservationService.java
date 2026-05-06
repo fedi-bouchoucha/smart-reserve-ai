@@ -9,6 +9,8 @@ import com.office.reservation.event.ReservationStatusChangedEvent;
 import com.office.reservation.exception.ReservationConflictException;
 import com.office.reservation.repository.*;
 import com.office.reservation.entity.HomeOffice;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -156,37 +158,42 @@ public class ReservationService {
         }
 
         String lockKey = "lock:desk:" + request.getChairId() + ":" + date;
-        boolean locked = lockService.acquireLock(lockKey, 10);
         
-        // Double-check lock with synchronized for local JVM concurrency (tests)
-        synchronized (lockKey.intern()) {
-            if (!locked) {
-                throw new RuntimeException("Resource is currently being reserved by another user. Please try again.");
+        return lockService.executeWithLock(lockKey, 5, 10, () -> {
+            if (request.getChairId() != null) {
+                chairRepository.findByIdWithLock(request.getChairId());
             }
-            try {
-                if (request.getChairId() != null) {
-                    chairRepository.findByIdWithLock(request.getChairId());
-                }
-                validateAvailability(request, start, end);
+            validateAvailability(request, start, end);
 
-                Reservation res = Reservation.builder()
-                        .user(user)
-                        .chair(request.getChairId() != null ? chairRepository.findById(request.getChairId()).orElse(null) : null)
-                        .meetingRoom(request.getMeetingRoomId() != null ? meetingRoomRepository.findById(request.getMeetingRoomId()).orElse(null) : null)
-                        .date(date)
-                        .startTime(start)
-                        .endTime(end)
-                        .status(finalStatus)
-                        .build();
+            Reservation res = Reservation.builder()
+                    .user(user)
+                    .chair(request.getChairId() != null ? chairRepository.findById(request.getChairId()).orElse(null) : null)
+                    .meetingRoom(request.getMeetingRoomId() != null ? meetingRoomRepository.findById(request.getMeetingRoomId()).orElse(null) : null)
+                    .date(date)
+                    .startTime(start)
+                    .endTime(end)
+                    .status(finalStatus)
+                    .build();
 
-                return mapToResponse(reservationRepository.save(res));
-            } finally {
-                lockService.releaseLock(lockKey);
-            }
-        }
+            Reservation saved = reservationRepository.save(res);
+            
+            // Notify user about new booking
+            eventPublisher.publishEvent(new ReservationStatusChangedEvent(
+                this, 
+                user, 
+                saved.getId(), 
+                saved.getChair() != null ? "Chair " + saved.getChair().getNumber() : "Room " + saved.getMeetingRoom().getName(), 
+                saved.getDate(), 
+                saved.getStatus().name(), 
+                "New reservation created"
+            ));
+
+            return mapToResponse(saved);
+        });
     }
 
     @Transactional
+    @CacheEvict(value = {"deskAvailability", "calendarAvailability"}, allEntries = true)
     public List<ReservationResponse> createBulkReservations(Long userId, BulkReservationRequest request) {
         // Monthly attendance validation
         validateMonthlyPresence(userId, request.getDates());
@@ -270,34 +277,26 @@ public class ReservationService {
 
         // Only check: is the room available at this time?
         String lockKey = "lock:room:" + request.getMeetingRoomId() + ":" + request.getDate();
-        boolean locked = lockService.acquireLock(lockKey, 10);
-
-        synchronized (lockKey.intern()) {
-            if (!locked) {
-                throw new RuntimeException("This meeting room is currently being reserved. Please try again.");
+        
+        return lockService.executeWithLock(lockKey, 5, 10, () -> {
+            meetingRoomRepository.findByIdWithLock(request.getMeetingRoomId());
+            if (reservationRepository.existsOverlappingRoomReservation(request.getMeetingRoomId(), request.getDate(), start, end)) {
+                throw new RuntimeException("This meeting room is already booked for the selected time slot.");
             }
-            try {
-                meetingRoomRepository.findByIdWithLock(request.getMeetingRoomId());
-                if (reservationRepository.existsOverlappingRoomReservation(request.getMeetingRoomId(), request.getDate(), start, end)) {
-                    throw new RuntimeException("This meeting room is already booked for the selected time slot.");
-                }
 
-                Reservation res = Reservation.builder()
-                        .user(user)
-                        .chair(null)
-                        .meetingRoom(meetingRoomRepository.findById(request.getMeetingRoomId())
-                                .orElseThrow(() -> new RuntimeException("Meeting room not found")))
-                        .date(request.getDate())
-                        .startTime(start)
-                        .endTime(end)
-                        .status(ReservationStatus.CONFIRMED)
-                        .build();
+            Reservation res = Reservation.builder()
+                    .user(user)
+                    .chair(null)
+                    .meetingRoom(meetingRoomRepository.findById(request.getMeetingRoomId())
+                            .orElseThrow(() -> new RuntimeException("Meeting room not found")))
+                    .date(request.getDate())
+                    .startTime(start)
+                    .endTime(end)
+                    .status(ReservationStatus.CONFIRMED)
+                    .build();
 
-                return mapToResponse(reservationRepository.save(res));
-            } finally {
-                lockService.releaseLock(lockKey);
-            }
-        }
+            return mapToResponse(reservationRepository.save(res));
+        });
     }
 
     /**
@@ -346,6 +345,7 @@ public class ReservationService {
     }
 
     @Transactional
+    @CacheEvict(value = {"deskAvailability", "calendarAvailability"}, allEntries = true)
     public ReservationResponse updatePendingReservationStatus(Long id, ReservationStatus newStatus) {
         Reservation res = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
@@ -361,6 +361,7 @@ public class ReservationService {
     }
 
     @Transactional
+    @CacheEvict(value = {"deskAvailability", "calendarAvailability"}, allEntries = true)
     public void deleteReservation(Long userId, Long reservationId) {
         Reservation res = reservationRepository.findById(reservationId).orElseThrow();
         if (!res.getUser().getId().equals(userId)) throw new RuntimeException("Unauthorized");
@@ -423,10 +424,12 @@ public class ReservationService {
         return MINIMUM_DAILY_PRESENCE;
     }
 
+    @Cacheable(value = "deskAvailability", key = "#date.toString()")
     public List<Object> getAvailableChairs(LocalDate date) {
         return chairRepository.findAvailableChairs(date, LocalTime.of(9,0), LocalTime.of(17,0), Arrays.asList(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_APPROVAL, ReservationStatus.AUTO_ASSIGNED)).stream().collect(Collectors.toList());
     }
 
+    @Cacheable(value = "roomAvailability", key = "#date.toString()")
     public List<Object> getAvailableRooms(LocalDate date) {
         return meetingRoomRepository.findAvailableRooms(date, LocalTime.of(9,0), LocalTime.of(17,0)).stream().collect(Collectors.toList());
     }
@@ -450,6 +453,7 @@ public class ReservationService {
         return !reservationRepository.existsOverlappingRoomReservation(roomId, date, start, end);
     }
 
+    @Cacheable(value = "calendarAvailability", key = "{#year, #month, #resourceId, #resourceType, #userId}")
     public List<CalendarStatusDTO> getCalendarAvailability(int year, int month, Long resourceId, String resourceType, Long userId) {
         YearMonth ym = YearMonth.of(year, month);
         List<CalendarStatusDTO> out = new ArrayList<>();

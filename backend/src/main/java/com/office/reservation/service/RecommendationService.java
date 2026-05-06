@@ -12,6 +12,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -70,6 +72,7 @@ public class RecommendationService {
     }
 
     // New LLM-powered Recommendation Method with Native Fallback
+    @Cacheable(value = "recommendations", key = "#request.userId + '-' + #request.date")
     public RecommendationResponse generateRecommendations(RecommendationRequest request) {
         if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_HERE")) {
             System.out.println("LLM API Key not configured. Falling back to native Java heuristic engine.");
