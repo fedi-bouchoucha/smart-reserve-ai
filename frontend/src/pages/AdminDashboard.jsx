@@ -45,7 +45,7 @@ export default function AdminDashboard() {
     const [showUserModal, setShowUserModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [userForm, setUserForm] = useState({
-        username: '', password: '', fullName: '', email: '', role: 'EMPLOYEE', managerId: ''
+        username: '', password: '', fullName: '', email: '', role: 'EMPLOYEE', managerId: '', targetAttendance: 50
     });
 
     useEffect(() => {
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
     };
 
     const resetForm = () => {
-        setUserForm({ username: '', password: '', fullName: '', email: '', role: 'EMPLOYEE', managerId: '' });
+        setUserForm({ username: '', password: '', fullName: '', email: '', role: 'EMPLOYEE', managerId: '', targetAttendance: 50 });
     };
 
     const handleAutoAssign = async () => {
@@ -370,6 +370,11 @@ export default function AdminDashboard() {
                                     <option value="MANAGER">Team Manager</option>
                                     <option value="ADMIN">System Administrator</option>
                                 </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Target Attendance (%)</label>
+                                <input className="input-modern" type="number" min="0" max="100" value={userForm.targetAttendance} onChange={e => setUserForm({ ...userForm, targetAttendance: parseInt(e.target.value) || 0 })} required />
                             </div>
 
                             <div className="modal-actions" style={{ marginTop: '2.5rem' }}>

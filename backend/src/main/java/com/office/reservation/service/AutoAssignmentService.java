@@ -166,4 +166,62 @@ public class AutoAssignmentService {
                 warnings
         );
     }
+
+    /**
+     * Pre-fills reservations for specific employees who have fixed desks.
+     */
+    @Transactional
+    public void autoAssignFixedDesksForMonth(int year, int month) {
+        YearMonth targetMonth = YearMonth.of(year, month);
+        LocalDate monthStart = targetMonth.atDay(1);
+        LocalDate monthEnd = targetMonth.atEndOfMonth();
+
+        List<LocalDate> workingDays = new ArrayList<>();
+        for (LocalDate d = monthStart; !d.isAfter(monthEnd); d = d.plusDays(1)) {
+            if (d.getDayOfWeek() != DayOfWeek.SATURDAY && d.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                workingDays.add(d);
+            }
+        }
+
+        Map<String, String> fixedAssignments = Map.of(
+            "employee63", "1",
+            "employee70", "43",
+            "employee71", "44"
+        );
+
+        LocalTime defaultStart = LocalTime.of(9, 0);
+        LocalTime defaultEnd = LocalTime.of(17, 0);
+        List<Chair> allChairs = chairRepository.findAll();
+
+        for (Map.Entry<String, String> entry : fixedAssignments.entrySet()) {
+            Optional<User> userOpt = userRepository.findByUsername(entry.getKey());
+            if (userOpt.isEmpty()) continue;
+            User employee = userOpt.get();
+
+            Chair targetChair = allChairs.stream()
+                .filter(c -> c.getEmplacement().getName().equals(entry.getValue()) || c.getEmplacement().getName().equalsIgnoreCase("E" + (entry.getValue().length() == 1 ? "0" + entry.getValue() : entry.getValue())))
+                .findFirst().orElse(null);
+
+            if (targetChair == null) continue;
+
+            for (LocalDate workDay : workingDays) {
+                // Skip if reservation already exists
+                if (reservationRepository.existsDeskReservationForUserAndDate(employee.getId(), workDay)) {
+                    continue;
+                }
+
+                Reservation reservation = Reservation.builder()
+                        .user(employee)
+                        .chair(targetChair)
+                        .meetingRoom(null)
+                        .date(workDay)
+                        .startTime(defaultStart)
+                        .endTime(defaultEnd)
+                        .status(ReservationStatus.CONFIRMED)
+                        .build();
+
+                reservationRepository.save(reservation);
+            }
+        }
+    }
 }

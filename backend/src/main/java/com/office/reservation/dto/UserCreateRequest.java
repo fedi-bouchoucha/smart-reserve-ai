@@ -7,18 +7,20 @@ public class UserCreateRequest {
     private String email;
     private String role;
     private Long managerId;
+    private Integer targetAttendance;
 
     public UserCreateRequest() {
     }
 
     public UserCreateRequest(String username, String password, String fullName, String email, String role,
-            Long managerId) {
+            Long managerId, Integer targetAttendance) {
         this.username = username;
         this.password = password;
         this.fullName = fullName;
         this.email = email;
         this.role = role;
         this.managerId = managerId;
+        this.targetAttendance = targetAttendance;
     }
 
     public String getUsername() {
@@ -67,5 +69,13 @@ public class UserCreateRequest {
 
     public void setManagerId(Long managerId) {
         this.managerId = managerId;
+    }
+
+    public Integer getTargetAttendance() {
+        return targetAttendance;
+    }
+
+    public void setTargetAttendance(Integer targetAttendance) {
+        this.targetAttendance = targetAttendance;
     }
 }

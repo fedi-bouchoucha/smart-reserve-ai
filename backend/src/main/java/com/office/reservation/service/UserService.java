@@ -45,6 +45,7 @@ public class UserService {
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .role(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.EMPLOYEE)
+                .targetAttendance(request.getTargetAttendance() != null ? request.getTargetAttendance() : 50)
                 .build();
 
         if (request.getManagerId() != null) {
@@ -100,6 +101,9 @@ public class UserService {
             User manager = userRepository.findById(request.getManagerId())
                     .orElseThrow(() -> new RuntimeException("Manager not found"));
             user.setManager(manager);
+        }
+        if (request.getTargetAttendance() != null) {
+            user.setTargetAttendance(request.getTargetAttendance());
         }
 
         User saved = userRepository.save(user);

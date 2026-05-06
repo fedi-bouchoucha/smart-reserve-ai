@@ -55,9 +55,20 @@ public class AutoAssignmentScheduler {
 
     private void checkAndRun() {
         LocalDate today = LocalDate.now();
+        YearMonth currentMonth = YearMonth.from(today);
+        YearMonth nextMonth = currentMonth.plusMonths(1);
+
+        try {
+            System.out.println("=== PRE-FILLING FIXED DESKS ===");
+            autoAssignmentService.autoAssignFixedDesksForMonth(currentMonth.getYear(), currentMonth.getMonthValue());
+            autoAssignmentService.autoAssignFixedDesksForMonth(nextMonth.getYear(), nextMonth.getMonthValue());
+            System.out.println("=== FIXED DESKS PRE-FILLED ===");
+        } catch (Exception e) {
+            System.err.println("FAILED TO PRE-FILL FIXED DESKS: " + e.getMessage());
+        }
+
         // Since the window is 1st - 20th, we only auto-assign if day > 20
         if (today.getDayOfMonth() > 20) {
-            YearMonth nextMonth = YearMonth.from(today).plusMonths(1);
 
             System.out.println("=== AUTO-ASSIGNMENT SCHEDULER TRIGGERED ===");
             System.out.println("Past the 20th. Target month: " + nextMonth);

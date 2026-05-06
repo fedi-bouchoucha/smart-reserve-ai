@@ -194,10 +194,16 @@ public class ReservationController {
 
     @GetMapping("/occupancy/{date}")
     public ResponseEntity<Map<String, Object>> getOccupancy(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        long occupancyCount = reservationService.getOccupancyCount(date);
+        int minimum = reservationService.getMinimumDailyPresence();
+        boolean meetsMinimum = reservationService.checkMinimumOccupancy(date);
+        long shortfall = meetsMinimum ? 0 : minimum - occupancyCount;
         return ResponseEntity.ok(Map.of(
                 "date", date,
-                "occupancyCount", reservationService.getOccupancyCount(date),
-                "meetsMinimum25Percent", reservationService.checkMinimumOccupancy(date)
+                "occupancyCount", occupancyCount,
+                "minimumRequired", minimum,
+                "meetsMinimum", meetsMinimum,
+                "shortfall", shortfall
         ));
     }
 

@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 @Service
 public class ReservationService {
 
+    private static final int MINIMUM_DAILY_PRESENCE = 30;
+
     private final ReservationRepository reservationRepository;
     private final ChairRepository chairRepository;
     private final MeetingRoomRepository meetingRoomRepository;
@@ -89,6 +91,17 @@ public class ReservationService {
             String deskName = chairRepository.findById(request.getChairId())
                     .map(c -> c.getEmplacement().getName())
                     .orElse("");
+
+            if (user.getUsername().equalsIgnoreCase("employee63") && !(deskName.equals("1") || deskName.equalsIgnoreCase("E01"))) {
+                throw new RuntimeException("employee63 can only reserve Desk 1.");
+            }
+            if (user.getUsername().equalsIgnoreCase("employee70") && !(deskName.equals("43") || deskName.equalsIgnoreCase("E43"))) {
+                throw new RuntimeException("employee70 can only reserve Desk 43.");
+            }
+            if (user.getUsername().equalsIgnoreCase("employee71") && !(deskName.equals("44") || deskName.equalsIgnoreCase("E44"))) {
+                throw new RuntimeException("employee71 can only reserve Desk 44.");
+            }
+
             if ((deskName.equals("1") || deskName.equalsIgnoreCase("E01")) && !user.getUsername().equalsIgnoreCase("employee63")) {
                 throw new RuntimeException("Desk 1 can only be reserved by employee63.");
             }
@@ -324,6 +337,29 @@ public class ReservationService {
             throw new RuntimeException("Auto-assigned reservations cannot be deleted by employees.");
         }
 
+        // Prevent fixed desk employees from deleting their fixed reservations
+        String username = res.getUser().getUsername();
+        if (res.getChair() != null) {
+            String deskName = res.getChair().getEmplacement().getName();
+            if ((username.equalsIgnoreCase("employee63") && (deskName.equals("1") || deskName.equalsIgnoreCase("E01"))) ||
+                (username.equalsIgnoreCase("employee70") && (deskName.equals("43") || deskName.equalsIgnoreCase("E43"))) ||
+                (username.equalsIgnoreCase("employee71") && (deskName.equals("44") || deskName.equalsIgnoreCase("E44")))) {
+                throw new RuntimeException("Fixed desk reservations cannot be cancelled.");
+            }
+        }
+
+        // Minimum daily presence check (only for confirmed desk reservations)
+        if (res.getChair() != null && res.getStatus() == ReservationStatus.CONFIRMED) {
+            long confirmedCount = reservationRepository.countByDateAndStatus(res.getDate(), ReservationStatus.CONFIRMED);
+            if (confirmedCount <= MINIMUM_DAILY_PRESENCE) {
+                throw new RuntimeException(
+                    "Cannot cancel this reservation. The office requires a minimum of " + MINIMUM_DAILY_PRESENCE +
+                    " employees present per day. Current count for " + res.getDate() + ": " + confirmedCount + "/" + MINIMUM_DAILY_PRESENCE +
+                    ". Please contact your manager to arrange a replacement before cancelling."
+                );
+            }
+        }
+
         reservationRepository.delete(res);
 
         // Notify user about cancellation
@@ -347,9 +383,12 @@ public class ReservationService {
     }
 
     public boolean checkMinimumOccupancy(LocalDate date) {
-        long totalStaff = userRepository.countByRole(Role.EMPLOYEE) + userRepository.countByRole(Role.MANAGER);
         long occupancy = getOccupancyCount(date);
-        return totalStaff > 0 && ((double)occupancy / totalStaff) >= 0.25;
+        return occupancy >= MINIMUM_DAILY_PRESENCE;
+    }
+
+    public int getMinimumDailyPresence() {
+        return MINIMUM_DAILY_PRESENCE;
     }
 
     public List<Object> getAvailableChairs(LocalDate date) {
@@ -389,6 +428,26 @@ public class ReservationService {
         // Desk assignment constraints
         if (resourceId != null && "chair".equalsIgnoreCase(resourceType)) {
             String deskName = chairRepository.findById(resourceId).map(c -> c.getEmplacement().getName()).orElse("");
+
+            if (user != null && user.getUsername().equalsIgnoreCase("employee63") && !(deskName.equals("1") || deskName.equalsIgnoreCase("E01"))) {
+                for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
+                    out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "employee63 can only reserve Desk 1.", 0));
+                }
+                return out;
+            }
+            if (user != null && user.getUsername().equalsIgnoreCase("employee70") && !(deskName.equals("43") || deskName.equalsIgnoreCase("E43"))) {
+                for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
+                    out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "employee70 can only reserve Desk 43.", 0));
+                }
+                return out;
+            }
+            if (user != null && user.getUsername().equalsIgnoreCase("employee71") && !(deskName.equals("44") || deskName.equalsIgnoreCase("E44"))) {
+                for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
+                    out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "employee71 can only reserve Desk 44.", 0));
+                }
+                return out;
+            }
+
             if ((deskName.equals("1") || deskName.equalsIgnoreCase("E01")) && user != null && !user.getUsername().equalsIgnoreCase("employee63")) {
                 for (LocalDate d = ym.atDay(1); !d.isAfter(ym.atEndOfMonth()); d = d.plusDays(1)) {
                     out.add(new CalendarStatusDTO(d, false, "RESTRICTED", "Desk 1 can only be reserved by employee63.", 0));
@@ -438,7 +497,7 @@ public class ReservationService {
                     out.add(new CalendarStatusDTO(d, false, "BOOKED", resourceType.equalsIgnoreCase("chair") ? "This desk is already booked." : "Meeting room already fully booked.", percentage)); continue;
                 }
             }
-            out.add(new CalendarStatusDTO(d, true, "AVAILABLE", "Available", percentage));
+            out.add(new CalendarStatusDTO(d, true, "AVAILABLE", "Available (" + occ + "/" + MINIMUM_DAILY_PRESENCE + " minimum employees booked)", percentage));
         }
         return out;
     }
