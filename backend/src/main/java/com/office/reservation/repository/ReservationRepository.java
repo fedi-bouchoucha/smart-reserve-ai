@@ -29,14 +29,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     long countByUserIdAndDateBetweenAndStatus(Long userId, LocalDate startDate, LocalDate endDate, ReservationStatus status);
 
-    @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.chair.id = :chairId AND r.date = :date AND r.status = 'CONFIRMED' AND " +
+    @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.chair.id = :chairId AND r.date = :date AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED') AND " +
            "((r.startTime < :endTime AND r.endTime > :startTime))")
     boolean existsOverlappingChairReservation(@Param("chairId") Long chairId, 
                                              @Param("date") LocalDate date, 
                                              @Param("startTime") LocalTime startTime, 
                                              @Param("endTime") LocalTime endTime);
 
-    @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.meetingRoom.id = :roomId AND r.date = :date AND r.status = 'CONFIRMED' AND " +
+    @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.meetingRoom.id = :roomId AND r.date = :date AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL', 'AUTO_ASSIGNED') AND " +
            "((r.startTime < :endTime AND r.endTime > :startTime))")
     boolean existsOverlappingRoomReservation(@Param("roomId") Long roomId, 
                                             @Param("date") LocalDate date, 

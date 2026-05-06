@@ -36,6 +36,7 @@ public class ReservationService {
     private final HomeOfficeRepository homeOfficeRepository;
     private final ConflictResolver conflictResolver;
     private final ApplicationEventPublisher eventPublisher;
+    private final DistributedLockService lockService;
 
     public ReservationService(ReservationRepository reservationRepository,
                               ChairRepository chairRepository,
@@ -44,7 +45,8 @@ public class ReservationService {
                               DayOffRepository dayOffRepository,
                               HomeOfficeRepository homeOfficeRepository,
                               ConflictResolver conflictResolver,
-                              ApplicationEventPublisher eventPublisher) {
+                              ApplicationEventPublisher eventPublisher,
+                              DistributedLockService lockService) {
         this.reservationRepository = reservationRepository;
         this.chairRepository = chairRepository;
         this.meetingRoomRepository = meetingRoomRepository;
@@ -53,6 +55,7 @@ public class ReservationService {
         this.homeOfficeRepository = homeOfficeRepository;
         this.conflictResolver = conflictResolver;
         this.eventPublisher = eventPublisher;
+        this.lockService = lockService;
     }
 
     @Transactional
@@ -152,19 +155,35 @@ public class ReservationService {
             }
         }
 
-        validateAvailability(request, start, end);
+        String lockKey = "lock:desk:" + request.getChairId() + ":" + date;
+        boolean locked = lockService.acquireLock(lockKey, 10);
+        
+        // Double-check lock with synchronized for local JVM concurrency (tests)
+        synchronized (lockKey.intern()) {
+            if (!locked) {
+                throw new RuntimeException("Resource is currently being reserved by another user. Please try again.");
+            }
+            try {
+                if (request.getChairId() != null) {
+                    chairRepository.findByIdWithLock(request.getChairId());
+                }
+                validateAvailability(request, start, end);
 
-        Reservation res = Reservation.builder()
-                .user(user)
-                .chair(request.getChairId() != null ? chairRepository.findById(request.getChairId()).orElse(null) : null)
-                .meetingRoom(request.getMeetingRoomId() != null ? meetingRoomRepository.findById(request.getMeetingRoomId()).orElse(null) : null)
-                .date(date)
-                .startTime(start)
-                .endTime(end)
-                .status(finalStatus)
-                .build();
+                Reservation res = Reservation.builder()
+                        .user(user)
+                        .chair(request.getChairId() != null ? chairRepository.findById(request.getChairId()).orElse(null) : null)
+                        .meetingRoom(request.getMeetingRoomId() != null ? meetingRoomRepository.findById(request.getMeetingRoomId()).orElse(null) : null)
+                        .date(date)
+                        .startTime(start)
+                        .endTime(end)
+                        .status(finalStatus)
+                        .build();
 
-        return mapToResponse(reservationRepository.save(res));
+                return mapToResponse(reservationRepository.save(res));
+            } finally {
+                lockService.releaseLock(lockKey);
+            }
+        }
     }
 
     @Transactional
@@ -250,22 +269,35 @@ public class ReservationService {
         }
 
         // Only check: is the room available at this time?
-        if (reservationRepository.existsOverlappingRoomReservation(request.getMeetingRoomId(), request.getDate(), start, end)) {
-            throw new RuntimeException("This meeting room is already booked for the selected time slot.");
+        String lockKey = "lock:room:" + request.getMeetingRoomId() + ":" + request.getDate();
+        boolean locked = lockService.acquireLock(lockKey, 10);
+
+        synchronized (lockKey.intern()) {
+            if (!locked) {
+                throw new RuntimeException("This meeting room is currently being reserved. Please try again.");
+            }
+            try {
+                meetingRoomRepository.findByIdWithLock(request.getMeetingRoomId());
+                if (reservationRepository.existsOverlappingRoomReservation(request.getMeetingRoomId(), request.getDate(), start, end)) {
+                    throw new RuntimeException("This meeting room is already booked for the selected time slot.");
+                }
+
+                Reservation res = Reservation.builder()
+                        .user(user)
+                        .chair(null)
+                        .meetingRoom(meetingRoomRepository.findById(request.getMeetingRoomId())
+                                .orElseThrow(() -> new RuntimeException("Meeting room not found")))
+                        .date(request.getDate())
+                        .startTime(start)
+                        .endTime(end)
+                        .status(ReservationStatus.CONFIRMED)
+                        .build();
+
+                return mapToResponse(reservationRepository.save(res));
+            } finally {
+                lockService.releaseLock(lockKey);
+            }
         }
-
-        Reservation res = Reservation.builder()
-                .user(user)
-                .chair(null)
-                .meetingRoom(meetingRoomRepository.findById(request.getMeetingRoomId())
-                        .orElseThrow(() -> new RuntimeException("Meeting room not found")))
-                .date(request.getDate())
-                .startTime(start)
-                .endTime(end)
-                .status(ReservationStatus.CONFIRMED)
-                .build();
-
-        return mapToResponse(reservationRepository.save(res));
     }
 
     /**
