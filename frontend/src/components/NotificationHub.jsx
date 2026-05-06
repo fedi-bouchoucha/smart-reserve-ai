@@ -7,10 +7,23 @@ export default function NotificationHub() {
     const [notifications, setNotifications] = useState([]);
 
     useEffect(() => {
+        // Request browser notification permission
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+
         webSocketService.connect((newNotification) => {
             const id = Date.now();
             setNotifications(prev => [...prev, { id, ...newNotification }]);
             
+            // Show native notification if page is hidden
+            if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+                new Notification("Smart Office Update", {
+                    body: newNotification.message,
+                    icon: "/logo192.png"
+                });
+            }
+
             // Auto-remove after 6 seconds
             setTimeout(() => {
                 setNotifications(prev => prev.filter(n => n.id !== id));

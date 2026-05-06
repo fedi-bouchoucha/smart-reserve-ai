@@ -39,7 +39,7 @@ public class ReservationService {
     private final ConflictResolver conflictResolver;
     private final ApplicationEventPublisher eventPublisher;
     private final DistributedLockService lockService;
-    private final FirebaseNotificationService notificationService;
+    private final NotificationService notificationService;
 
     public ReservationService(ReservationRepository reservationRepository,
                               ChairRepository chairRepository,
@@ -50,7 +50,7 @@ public class ReservationService {
                               ConflictResolver conflictResolver,
                               ApplicationEventPublisher eventPublisher,
                               DistributedLockService lockService,
-                              FirebaseNotificationService notificationService) {
+                              NotificationService notificationService) {
         this.reservationRepository = reservationRepository;
         this.chairRepository = chairRepository;
         this.meetingRoomRepository = meetingRoomRepository;

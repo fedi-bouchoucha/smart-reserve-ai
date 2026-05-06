@@ -20,13 +20,16 @@ public class NotificationService {
     private final JavaMailSender mailSender;
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationRepository notificationRepository;
+    private final FirebaseNotificationService firebaseNotificationService;
 
     public NotificationService(JavaMailSender mailSender, 
                                SimpMessagingTemplate messagingTemplate, 
-                               NotificationRepository notificationRepository) {
+                               NotificationRepository notificationRepository,
+                               FirebaseNotificationService firebaseNotificationService) {
         this.mailSender = mailSender;
         this.messagingTemplate = messagingTemplate;
         this.notificationRepository = notificationRepository;
+        this.firebaseNotificationService = firebaseNotificationService;
     }
 
     @Async
@@ -80,6 +83,10 @@ public class NotificationService {
                     "/topic/notifications", 
                     Map.of("message", message, "timestamp", notification.getTimestamp())
             );
+
+            // Trigger real FCM Push Notification
+            firebaseNotificationService.sendPushNotification(user, "Smart Office Update", message);
+
             notification.setStatus(Notification.NotificationStatus.SENT);
         } catch (Exception e) {
             notification.setStatus(Notification.NotificationStatus.FAILED);
