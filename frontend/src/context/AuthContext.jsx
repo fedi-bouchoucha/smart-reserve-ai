@@ -19,15 +19,23 @@ export function AuthProvider({ children }) {
         const res = await api.post('/auth/login', { username, password });
         const data = res.data;
         localStorage.setItem('token', data.token);
+        localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('user', JSON.stringify(data));
         setUser(data);
         return data;
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
+    const logout = async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch (err) {
+            console.error('Logout error:', err);
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            setUser(null);
+        }
     };
 
     return (

@@ -2,6 +2,7 @@ package com.office.reservation.dto;
 
 public class LoginResponse {
     private String token;
+    private String refreshToken;
     private String username;
     private String fullName;
     private String profilePicture;
@@ -12,8 +13,9 @@ public class LoginResponse {
     public LoginResponse() {
     }
 
-    public LoginResponse(String token, String username, String fullName, String profilePicture, String role, Long userId, Integer targetAttendance) {
+    public LoginResponse(String token, String refreshToken, String username, String fullName, String profilePicture, String role, Long userId, Integer targetAttendance) {
         this.token = token;
+        this.refreshToken = refreshToken;
         this.username = username;
         this.fullName = fullName;
         this.profilePicture = profilePicture;
@@ -28,6 +30,14 @@ public class LoginResponse {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public String getUsername() {
@@ -84,6 +94,7 @@ public class LoginResponse {
 
     public static class LoginResponseBuilder {
         private String token;
+        private String refreshToken;
         private String username;
         private String fullName;
         private String profilePicture;
@@ -93,6 +104,11 @@ public class LoginResponse {
 
         public LoginResponseBuilder token(String token) {
             this.token = token;
+            return this;
+        }
+
+        public LoginResponseBuilder refreshToken(String refreshToken) {
+            this.refreshToken = refreshToken;
             return this;
         }
 
@@ -127,7 +143,7 @@ public class LoginResponse {
         }
 
         public LoginResponse build() {
-            return new LoginResponse(token, username, fullName, profilePicture, role, userId, targetAttendance);
+            return new LoginResponse(token, refreshToken, username, fullName, profilePicture, role, userId, targetAttendance);
         }
     }
 }

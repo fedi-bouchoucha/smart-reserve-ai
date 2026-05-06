@@ -4,6 +4,9 @@ import com.office.reservation.dto.LoginRequest;
 import com.office.reservation.dto.LoginResponse;
 import com.office.reservation.dto.UserCreateRequest;
 import com.office.reservation.dto.UserResponse;
+import com.office.reservation.dto.TokenRefreshRequest;
+import com.office.reservation.dto.TokenRefreshResponse;
+import com.office.reservation.entity.RefreshToken;
 import com.office.reservation.entity.User;
 import com.office.reservation.repository.UserRepository;
 import com.office.reservation.security.JwtUtil;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import com.office.reservation.dto.ActivityLogRequest;
 import com.office.reservation.service.AnomalyDetectionService;
 import com.office.reservation.service.GeoLocationService;
+import com.office.reservation.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Map;
@@ -31,19 +35,22 @@ public class AuthController {
     private final UserService userService;
     private final AnomalyDetectionService anomalyDetectionService;
     private final GeoLocationService geoLocationService;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtUtil jwtUtil,
                           UserRepository userRepository,
                           UserService userService,
                           AnomalyDetectionService anomalyDetectionService,
-                          GeoLocationService geoLocationService) {
+                          GeoLocationService geoLocationService,
+                          RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.userService = userService;
         this.anomalyDetectionService = anomalyDetectionService;
         this.geoLocationService = geoLocationService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @PostMapping("/login")
@@ -55,12 +62,14 @@ public class AuthController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         // Track the login event asynchronously
         trackLoginEvent(user, httpRequest);
 
         return ResponseEntity.ok(LoginResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken.getToken())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
                 .profilePicture(user.getProfilePicture())
@@ -68,6 +77,28 @@ public class AuthController {
                 .userId(user.getId())
                 .targetAttendance(user.getTargetAttendance())
                 .build());
+    }
+
+    @PostMapping("/refreshtoken")
+    public ResponseEntity<?> refreshtoken(@RequestBody TokenRefreshRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+                    return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logoutUser(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        refreshTokenService.deleteByUserId(user.getId());
+        return ResponseEntity.ok(Map.of("message", "Log out successful!"));
     }
 
     @PostMapping("/register")
