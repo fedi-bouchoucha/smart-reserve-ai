@@ -157,6 +157,8 @@ public class ReservationService {
             }
         }
 
+        final ReservationStatus statusToSave = finalStatus;
+
         String lockKey = "lock:desk:" + request.getChairId() + ":" + date;
         
         return lockService.executeWithLock(lockKey, 5, 10, () -> {
@@ -172,7 +174,7 @@ public class ReservationService {
                     .date(date)
                     .startTime(start)
                     .endTime(end)
-                    .status(finalStatus)
+                    .status(statusToSave)
                     .build();
 
             Reservation saved = reservationRepository.save(res);
