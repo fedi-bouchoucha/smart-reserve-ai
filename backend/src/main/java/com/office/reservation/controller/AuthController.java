@@ -119,6 +119,16 @@ public class AuthController {
         return ResponseEntity.ok(userService.updateProfile(user.getId(), profileUpdate.get("fullName"), profileUpdate.get("email"), profileUpdate.get("profilePicture"), profileUpdate.get("username")));
     }
 
+    @PostMapping("/fcm-token")
+    public ResponseEntity<?> updateFcmToken(@AuthenticationPrincipal UserDetails userDetails,
+                                          @RequestBody Map<String, String> request) {
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setFcmToken(request.get("token"));
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "FCM token updated successfully"));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(userService.findByUsername(userDetails.getUsername()));

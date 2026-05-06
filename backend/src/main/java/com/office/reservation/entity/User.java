@@ -45,11 +45,12 @@ public class User {
 
     private Integer targetAttendance = 50;
     private String department;
+    private String fcmToken;
 
     public User() {
     }
 
-    public User(Long id, String username, String password, String fullName, String email, String profilePicture, Role role, User manager, String resetCode, LocalDateTime resetCodeExpiresAt, Boolean archived, Integer targetAttendance, String department) {
+    public User(Long id, String username, String password, String fullName, String email, String profilePicture, Role role, User manager, String resetCode, LocalDateTime resetCodeExpiresAt, Boolean archived, Integer targetAttendance, String department, String fcmToken) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -63,6 +64,7 @@ public class User {
         this.archived = archived;
         this.targetAttendance = targetAttendance;
         this.department = department;
+        this.fcmToken = fcmToken;
     }
 
     // Getters and Setters
@@ -178,6 +180,14 @@ public class User {
         this.department = department;
     }
 
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
+
     // Builder
     public static UserBuilder builder() {
         return new UserBuilder();
@@ -197,6 +207,7 @@ public class User {
         private Boolean archived = false;
         private Integer targetAttendance = 50;
         private String department;
+        private String fcmToken;
 
         public UserBuilder id(Long id) {
             this.id = id;
@@ -263,8 +274,13 @@ public class User {
             return this;
         }
 
+        public UserBuilder fcmToken(String fcmToken) {
+            this.fcmToken = fcmToken;
+            return this;
+        }
+
         public User build() {
-            return new User(id, username, password, fullName, email, profilePicture, role, manager, resetCode, resetCodeExpiresAt, archived, targetAttendance, department);
+            return new User(id, username, password, fullName, email, profilePicture, role, manager, resetCode, resetCodeExpiresAt, archived, targetAttendance, department, fcmToken);
         }
     }
 }

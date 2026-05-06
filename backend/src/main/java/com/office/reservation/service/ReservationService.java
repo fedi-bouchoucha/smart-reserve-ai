@@ -39,6 +39,7 @@ public class ReservationService {
     private final ConflictResolver conflictResolver;
     private final ApplicationEventPublisher eventPublisher;
     private final DistributedLockService lockService;
+    private final FirebaseNotificationService notificationService;
 
     public ReservationService(ReservationRepository reservationRepository,
                               ChairRepository chairRepository,
@@ -58,6 +59,7 @@ public class ReservationService {
         this.conflictResolver = conflictResolver;
         this.eventPublisher = eventPublisher;
         this.lockService = lockService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -179,7 +181,7 @@ public class ReservationService {
 
             Reservation saved = reservationRepository.save(res);
             
-            // Notify user about new booking
+            // Notify user about new booking via WebSocket
             eventPublisher.publishEvent(new ReservationStatusChangedEvent(
                 this, 
                 user, 
@@ -189,6 +191,15 @@ public class ReservationService {
                 saved.getStatus().name(), 
                 "New reservation created"
             ));
+
+            // Push Notification for Manager if approval is needed
+            if (saved.getStatus() == ReservationStatus.PENDING_APPROVAL && user.getManager() != null) {
+                notificationService.sendPushNotification(
+                    user.getManager(),
+                    "New Approval Required",
+                    "Employee " + user.getFullName() + " has a new reservation pending your approval."
+                );
+            }
 
             return mapToResponse(saved);
         });
@@ -359,7 +370,14 @@ public class ReservationService {
         }
 
         res.setStatus(newStatus);
-        return mapToResponse(reservationRepository.save(res));
+        Reservation saved = reservationRepository.save(res);
+        
+        // Push Notification to Employee
+        String title = (newStatus == ReservationStatus.CONFIRMED) ? "Reservation Approved!" : "Reservation Update";
+        String body = "Your reservation for " + saved.getDate() + " is now " + newStatus.name().toLowerCase().replace("_", " ") + ".";
+        notificationService.sendPushNotification(saved.getUser(), title, body);
+
+        return mapToResponse(saved);
     }
 
     @Transactional

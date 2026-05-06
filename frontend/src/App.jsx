@@ -15,6 +15,9 @@ import ForgotPassword from './pages/ForgotPassword';
 import Layout from './components/Layout';
 
 import LandingPage from './pages/LandingPage';
+import { useEffect } from 'react';
+import { requestForToken, onMessageListener } from './firebase';
+import { toast, Toaster } from 'react-hot-toast';
 
 function ProtectedRoute({ children, roles }) {
     const { user, loading } = useAuth();
@@ -35,6 +38,35 @@ function HomeRedirect() {
 }
 
 function App() {
+    useEffect(() => {
+        const setupNotifications = async () => {
+            // Wait a bit for auth to initialize
+            setTimeout(() => {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    requestForToken();
+                }
+            }, 2000);
+        };
+
+        setupNotifications();
+
+        onMessageListener()
+            .then((payload) => {
+                console.log("Foreground notification: ", payload);
+                toast.success(`${payload.notification.title}: ${payload.notification.body}`, {
+                    duration: 6000,
+                    position: 'top-right',
+                    style: {
+                        background: '#1e293b',
+                        color: '#fff',
+                        border: '1px solid #334155'
+                    }
+                });
+            })
+            .catch((err) => console.log('failed: ', err));
+    }, []);
+
     return (
         <AuthProvider>
             <BrowserRouter>
@@ -86,6 +118,7 @@ function App() {
                     } />
                 </Routes>
             </BrowserRouter>
+            <Toaster />
         </AuthProvider>
     );
 }
