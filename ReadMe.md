@@ -1,6 +1,6 @@
-# 🏢 Smart Office Reservation System
-
 <div align="center">
+  <img src="frontend/public/logo.png" alt="SmartReserve Logo" width="120" style="border-radius: 20px; margin-bottom: 20px;" />
+  <h1>🏢 Smart Office Reservation System</h1>
   <h3>A modern, intelligent workspace booking platform tailored for agile teams.</h3>
 </div>
 

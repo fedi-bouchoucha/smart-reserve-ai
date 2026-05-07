@@ -97,18 +97,11 @@ export default function Layout({ children }) {
         <div className="dashboard-grid">
             <aside className="sidebar-modern animate-in">
                 <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ 
-                        background: 'hsl(var(--primary))', 
-                        padding: '0.5rem', 
-                        borderRadius: '0.5rem',
-                        color: 'white'
-                    }}>
-                        <LayoutDashboard size={24} />
-                    </div>
-                    <div>
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>SmartPlanning</h2>
-                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>Workspace Manager</span>
-                    </div>
+                    <img 
+                        src="/logo.png" 
+                        alt="Logo" 
+                        style={{ height: '32px', width: 'auto', borderRadius: '4px' }} 
+                    />
                 </div>
 
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>

@@ -33,32 +33,31 @@ export default function LandingPage() {
             }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                        <img
-                            src="/logo.jpg"
-                            alt="Dräxlmaier Logo"
-                            style={{
-                                height: '100px',
-                                width: 'auto',
-                                filter: 'brightness(1.1)',
-                                transition: 'transform 0.3s ease'
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        />
-                        <div style={{
-                            fontSize: '1.75rem',
-                            fontWeight: 900,
-                            letterSpacing: '-0.03em',
-                            color: 'hsl(var(--foreground))',
-                            background: 'linear-gradient(to right, hsl(var(--foreground)), hsl(var(--foreground) / 0.7))',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.6rem'
-                        }}>
-                            <span style={{ height: '40px', width: '2px', background: 'hsl(var(--border))', margin: '0 0.8rem' }} />
-                            SmartReserve
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <img
+                                src="/logo.png"
+                                alt="SmartReserve Logo"
+                                style={{
+                                    height: '60px',
+                                    width: 'auto',
+                                    borderRadius: '8px',
+                                    transition: 'transform 0.3s ease'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            />
+                            <div style={{ width: '1px', height: '30px', background: 'hsl(var(--border))' }}></div>
+                            <img
+                                src="/logo.jpg"
+                                alt="Dräxlmaier Logo"
+                                style={{
+                                    height: '100px',
+                                    width: 'auto',
+                                    transition: 'transform 0.3s ease'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            />
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

@@ -53,16 +53,17 @@ export default function Login() {
                 style={{ width: '100%', maxWidth: '440px', padding: '2.5rem' }}
             >
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                    <div style={{ 
-                        background: 'hsl(var(--primary))', 
-                        padding: '1rem', 
-                        borderRadius: '1rem',
-                        color: 'white',
-                        width: 'fit-content',
-                        margin: '0 auto 1.5rem'
-                    }}>
-                        <LayoutDashboard size={32} />
-                    </div>
+                    <img 
+                        src="/logo.png" 
+                        alt="SmartReserve Logo" 
+                        style={{ 
+                            height: '80px', 
+                            width: 'auto', 
+                            borderRadius: '12px',
+                            margin: '0 auto 1.5rem',
+                            display: 'block'
+                        }} 
+                    />
                     <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Welcome Back</h1>
                     <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.875rem' }}>
                         Enter your credentials to access your workspace

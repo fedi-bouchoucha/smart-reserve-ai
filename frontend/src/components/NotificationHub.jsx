@@ -20,7 +20,7 @@ export default function NotificationHub() {
             if (document.hidden && "Notification" in window && Notification.permission === "granted") {
                 new Notification("Smart Office Update", {
                     body: newNotification.message,
-                    icon: "/logo192.png"
+                    icon: "/logo.png"
                 });
             }
 
