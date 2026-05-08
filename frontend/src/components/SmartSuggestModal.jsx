@@ -25,7 +25,7 @@ export default function SmartSuggestModal({ isOpen, onClose, selectedDate, avail
     try {
       // Map frontend desk data to the expected AI schema
       const realTimeAvailability = availableDesks.map((d) => ({
-        id: d.id,
+        id: String(d.id),
         zone: parseInt(d.id) > 20 ? 'Quiet' : 'Collaborative',
         floor: 'Floor 3',
         capacity: 1,
@@ -57,7 +57,7 @@ export default function SmartSuggestModal({ isOpen, onClose, selectedDate, avail
       setRecommendations(res.data.recommendations || []);
     } catch (err) {
       console.error('AI Suggestion error:', err);
-      setError('Failed to generate recommendations. The AI might be taking a nap.');
+      setError('Smart suggestions are temporarily unavailable. Please check your connection or try again later.');
     }
     setLoading(false);
   };
@@ -97,7 +97,7 @@ export default function SmartSuggestModal({ isOpen, onClose, selectedDate, avail
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, background: 'linear-gradient(to right, hsl(var(--primary)), #8b5cf6)', WebkitBackgroundClip: 'text', color: 'transparent' }}>
                 AI Smart Suggest
               </h2>
-              <p style={{ margin: 0, fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Powered by Heuristic Engine</p>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Powered by SmartReserve Intelligence</p>
             </div>
           </div>
           <button onClick={onClose} className="btn-ui btn-ghost" style={{ padding: '0.5rem' }}><X size={20} /></button>

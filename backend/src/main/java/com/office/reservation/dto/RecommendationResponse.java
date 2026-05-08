@@ -13,6 +13,9 @@ public class RecommendationResponse {
     }
 
     public List<RecommendationItem> getRecommendations() {
+        if (recommendations == null) {
+            return new java.util.ArrayList<>();
+        }
         return recommendations;
     }
 

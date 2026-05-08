@@ -35,17 +35,15 @@ public class RefreshTokenService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        RefreshToken refreshToken = new RefreshToken();
+        // Reuse existing token if it exists (avoids unique constraint violation)
+        RefreshToken refreshToken = refreshTokenRepository.findByUser(user)
+                .orElseGet(RefreshToken::new);
 
         refreshToken.setUser(user);
         refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
         refreshToken.setToken(UUID.randomUUID().toString());
 
-        // We could delete any existing tokens for this user first if we want to limit to 1 active session
-        // refreshTokenRepository.deleteByUser(user);
-
-        refreshToken = refreshTokenRepository.save(refreshToken);
-        return refreshToken;
+        return refreshTokenRepository.save(refreshToken);
     }
 
     public RefreshToken verifyExpiration(RefreshToken token) {

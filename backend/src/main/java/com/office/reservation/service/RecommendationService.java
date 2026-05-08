@@ -44,7 +44,13 @@ public class RecommendationService {
     public RecommendationService(ReservationRepository reservationRepository, List<ScoringFactor> scoringFactors) {
         this.reservationRepository = reservationRepository;
         this.scoringFactors = scoringFactors;
-        this.restTemplate = new RestTemplate();
+        
+        // Configure RestTemplate with timeouts to prevent hanging
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(15000);
+        this.restTemplate = new RestTemplate(factory);
+        
         this.objectMapper = new ObjectMapper()
                 .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -72,7 +78,7 @@ public class RecommendationService {
     }
 
     // New LLM-powered Recommendation Method with Native Fallback
-    @Cacheable(value = "recommendations", key = "#request.userId + '-' + #request.date")
+    @Cacheable(value = "recommendations", key = "#request.userId + '-' + (#request.currentRequest != null ? #request.currentRequest.date : 'no-date')")
     public RecommendationResponse generateRecommendations(RecommendationRequest request) {
         if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_HERE")) {
             System.out.println("LLM API Key not configured. Falling back to native Java heuristic engine.");
@@ -80,10 +86,11 @@ public class RecommendationService {
         }
 
         try {
+            System.out.println("Generating AI recommendations for user: " + request.getUserId());
             // 1. Serialize the input request
             String requestJson = objectMapper.writeValueAsString(request);
 
-            // 2. Construct the Prompt
+            // 2. Construct the Prompt (system prompt)
             String systemPrompt = "You are an intelligent recommendation AI for a smart office reservation system.\n" +
                     "Your goal is to suggest the best desk or meeting room for a user based on their preferences, behavior, and context.\n\n" +
                     "INPUT DATA:\n" + requestJson + "\n\n" +
@@ -126,18 +133,41 @@ public class RecommendationService {
 
             // 4. Call the LLM API
             ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, entity, String.class);
+            String responseBody = response.getBody();
+
+            if (responseBody == null || responseBody.isEmpty()) {
+                throw new RuntimeException("LLM API returned an empty response body.");
+            }
 
             // 5. Parse the Response
-            JsonNode root = objectMapper.readTree(response.getBody());
-            String content = root.path("choices").get(0).path("message").path("content").asText();
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode choices = root.path("choices");
+            
+            if (!choices.isArray() || choices.isEmpty()) {
+                throw new RuntimeException("LLM API response has no choices or invalid format: " + responseBody);
+            }
+
+            String content = choices.get(0).path("message").path("content").asText();
+
+            if (content == null || content.isEmpty()) {
+                throw new RuntimeException("LLM API returned empty message content.");
+            }
 
             // Deserialize the content back into RecommendationResponse
-            return objectMapper.readValue(content, RecommendationResponse.class);
+            RecommendationResponse result = objectMapper.readValue(content, RecommendationResponse.class);
+            System.out.println("AI recommendations successfully generated for user: " + request.getUserId());
+            return result;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("LLM API request failed. Falling back to native Java heuristic engine.");
-            return generateNativeRecommendations(request);
+            System.err.println("LLM AI engine failed for user " + request.getUserId() + ": " + e.getMessage());
+            System.out.println("Transitioning to high-performance native heuristic fallback...");
+            try {
+                return generateNativeRecommendations(request);
+            } catch (Exception nativeEx) {
+                System.err.println("CRITICAL: Native heuristic engine also failed: " + nativeEx.getMessage());
+                // Return an empty response instead of crashing to keep the UI alive
+                return new RecommendationResponse(new java.util.ArrayList<>());
+            }
         }
     }
 
@@ -145,6 +175,14 @@ public class RecommendationService {
         List<RecommendationItem> scoredItems = new java.util.ArrayList<>();
 
         if (request.getRealTimeAvailability() == null || request.getRealTimeAvailability().isEmpty()) {
+            // Return a default welcome recommendation if no desks are provided
+            scoredItems.add(RecommendationItem.builder()
+                .resourceId("System")
+                .type("Info")
+                .score(100)
+                .reason("Welcome! Please select a date to see available desks.")
+                .reasons(List.of("Waiting for availability data"))
+                .build());
             return new RecommendationResponse(scoredItems);
         }
 
