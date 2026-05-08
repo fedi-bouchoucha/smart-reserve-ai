@@ -1,14 +1,10 @@
 package com.office.reservation.service;
 
+import com.office.reservation.entity.*;
 import com.office.reservation.dto.*;
-import com.office.reservation.entity.Reservation;
-import com.office.reservation.entity.ReservationStatus;
-import com.office.reservation.entity.Role;
-import com.office.reservation.entity.User;
-import com.office.reservation.event.ReservationStatusChangedEvent;
-import com.office.reservation.exception.ReservationConflictException;
 import com.office.reservation.repository.*;
-import com.office.reservation.entity.HomeOffice;
+import com.office.reservation.exception.ReservationConflictException;
+import com.office.reservation.event.ReservationStatusChangedEvent;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
@@ -64,6 +60,7 @@ public class ReservationService {
     }
 
     @Transactional
+    @CacheEvict(value = {"deskAvailability", "calendarAvailability"}, allEntries = true)
     public ReservationResponse createReservation(Long userId, ReservationRequest request) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         LocalDate date = request.getDate();
@@ -265,6 +262,7 @@ public class ReservationService {
      * This is completely independent of desk reservations.
      */
     @Transactional
+    @CacheEvict(value = {"roomAvailability", "calendarAvailability"}, allEntries = true)
     public ReservationResponse createMeetingRoomBooking(Long userId, MeetingRoomBookingRequest request) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         LocalTime start = request.getStartTime() != null ? request.getStartTime() : LocalTime.of(9, 0);
@@ -446,13 +444,29 @@ public class ReservationService {
     }
 
     @Cacheable(value = "deskAvailability", key = "#date.toString()")
-    public List<Object> getAvailableChairs(LocalDate date) {
-        return chairRepository.findAvailableChairs(date, LocalTime.of(9,0), LocalTime.of(17,0), Arrays.asList(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_APPROVAL, ReservationStatus.AUTO_ASSIGNED)).stream().collect(Collectors.toList());
+    public List<ChairResponse> getAvailableChairs(LocalDate date) {
+        return chairRepository.findAvailableChairs(date, LocalTime.of(9,0), LocalTime.of(17,0), Arrays.asList(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_APPROVAL, ReservationStatus.AUTO_ASSIGNED))
+                .stream()
+                .map(c -> new ChairResponse(
+                        c.getId(),
+                        c.getNumber(),
+                        c.getEmplacement().getId(),
+                        c.getEmplacement().getName(),
+                        c.getEmplacement().getFloor()
+                ))
+                .collect(Collectors.toList());
     }
 
     @Cacheable(value = "roomAvailability", key = "#date.toString()")
-    public List<Object> getAvailableRooms(LocalDate date) {
-        return meetingRoomRepository.findAvailableRooms(date, LocalTime.of(9,0), LocalTime.of(17,0)).stream().collect(Collectors.toList());
+    public List<RoomResponse> getAvailableRooms(LocalDate date) {
+        return meetingRoomRepository.findAvailableRooms(date, LocalTime.of(9,0), LocalTime.of(17,0)).stream()
+                .map(r -> new RoomResponse(
+                        r.getId(),
+                        r.getName(),
+                        r.getCapacity(),
+                        r.getFloor()
+                ))
+                .collect(Collectors.toList());
     }
 
     /**

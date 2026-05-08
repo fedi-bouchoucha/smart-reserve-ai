@@ -208,12 +208,12 @@ public class ReservationController {
     }
 
     @GetMapping("/available/chairs/{date}")
-    public ResponseEntity<List<Object>> getAvailableChairs(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    public ResponseEntity<List<ChairResponse>> getAvailableChairs(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok(reservationService.getAvailableChairs(date));
     }
 
     @GetMapping("/available/rooms/{date}")
-    public ResponseEntity<List<Object>> getAvailableRooms(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    public ResponseEntity<List<RoomResponse>> getAvailableRooms(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok(reservationService.getAvailableRooms(date));
     }
 
