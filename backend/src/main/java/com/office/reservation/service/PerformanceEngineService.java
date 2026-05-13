@@ -54,7 +54,9 @@ public class PerformanceEngineService {
         LocalDate monday = weekStart.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate friday = monday.plusDays(4);
 
-        List<User> employees = userRepository.findByRole(Role.EMPLOYEE);
+        List<User> employees = userRepository.findByRole(Role.EMPLOYEE).stream()
+                .filter(u -> !Boolean.TRUE.equals(u.isArchived()))
+                .collect(Collectors.toList());
         int computed = 0;
 
         for (User employee : employees) {
@@ -263,7 +265,9 @@ public class PerformanceEngineService {
         User manager = userRepository.findById(managerId)
                 .orElseThrow(() -> new RuntimeException("Manager not found"));
 
-        List<User> employees = userRepository.findByManagerId(managerId);
+        List<User> employees = userRepository.findByManagerId(managerId).stream()
+                .filter(u -> !Boolean.TRUE.equals(u.isArchived()))
+                .collect(Collectors.toList());
 
         TeamPerformanceDTO team = new TeamPerformanceDTO();
         team.setManagerName(manager.getFullName());
@@ -317,7 +321,9 @@ public class PerformanceEngineService {
      * Generate performance report for ALL employees (admin-only view).
      */
     public TeamPerformanceDTO generateAllEmployeesReport(String adminName) {
-        List<User> employees = userRepository.findByRole(Role.EMPLOYEE);
+        List<User> employees = userRepository.findByRole(Role.EMPLOYEE).stream()
+                .filter(u -> !Boolean.TRUE.equals(u.isArchived()))
+                .collect(Collectors.toList());
 
         TeamPerformanceDTO team = new TeamPerformanceDTO();
         team.setManagerName(adminName);

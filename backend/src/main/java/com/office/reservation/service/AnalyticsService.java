@@ -67,21 +67,26 @@ public class AnalyticsService {
     }
 
     public List<Map<String, Object>> getDailyPresencePercentage() {
-        long totalUsers = userRepository.count();
-        if (totalUsers == 0) totalUsers = 1; // prevent division by zero
-
         if (reservationRepository.count() == 0) {
             return generateMockPresence();
         }
 
+        long totalUsers = userRepository.findAll().stream()
+                .filter(u -> !Boolean.TRUE.equals(u.isArchived()))
+                .count();
+        if (totalUsers == 0) totalUsers = 1; // prevent division by zero
+
         final long denomenator = totalUsers; // for use in lambda
 
         return reservationRepository.findAll().stream()
-                .collect(Collectors.groupingBy(Reservation::getDate, Collectors.counting()))
+                .filter(r -> r.getStatus() == ReservationStatus.CONFIRMED || r.getStatus() == ReservationStatus.AUTO_ASSIGNED)
+                .filter(r -> r.getChair() != null) // Only desk reservations count as daily presence
+                .collect(Collectors.groupingBy(Reservation::getDate, 
+                        Collectors.mapping(r -> r.getUser().getId(), Collectors.toSet())))
                 .entrySet().stream()
                 .map(e -> {
-                    long count = e.getValue();
-                    double percentage = (double) count * 100 / denomenator;
+                    long uniqueEmployees = e.getValue().size();
+                    double percentage = (double) uniqueEmployees * 100 / denomenator;
                     
                     Map<String, Object> map = new HashMap<>();
                     map.put("date", e.getKey().toString());
