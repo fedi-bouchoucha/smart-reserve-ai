@@ -2,86 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Shield, Activity, AlertTriangle, Ban, CheckCircle,
-    Eye, Clock, MapPin, Monitor, Wifi, ChevronDown, ChevronUp,
-    Zap, Search, FlaskConical, BarChart3, PieChart,
-    Globe, Server, UserX, CalendarX, Bot, Sunrise
+    Clock, MapPin, Monitor, Wifi, ChevronDown, ChevronUp,
+    Zap, BarChart3, PieChart
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, PieChart as RPieChart, Pie, Cell,
-    AreaChart, Area, Legend
+    Legend
 } from 'recharts';
 import api from '../services/api';
-
-// ─── Pre-built Scenarios ─────────────────────────────────────────
-const SCENARIOS = [
-    {
-        name: 'Normal Activity',
-        icon: CheckCircle,
-        data: {
-            userId: 2, username: 'employee1',
-            timestamp: new Date().toISOString(),
-            loginLocation: 'Tunisia/Tunis', ipAddress: '192.168.1.100',
-            deviceType: 'Windows Desktop', requestsLastMinute: 5,
-            bookingActions: 1, cancellationActions: 0
-        }
-    },
-    {
-        name: 'Location Jump',
-        icon: Globe,
-        data: {
-            userId: 2, username: 'employee1',
-            timestamp: new Date().toISOString(),
-            loginLocation: 'Russia/Moscow', ipAddress: '185.220.101.42',
-            deviceType: 'Linux Desktop', requestsLastMinute: 3,
-            bookingActions: 0, cancellationActions: 0
-        }
-    },
-    {
-        name: 'Bot Attack',
-        icon: Bot,
-        data: {
-            userId: 3, username: 'employee2',
-            timestamp: new Date().toISOString(),
-            loginLocation: 'Tunisia/Tunis', ipAddress: '10.0.0.55',
-            deviceType: 'API Client (cURL)', requestsLastMinute: 150,
-            bookingActions: 45, cancellationActions: 0
-        }
-    },
-    {
-        name: 'Booking Abuse',
-        icon: CalendarX,
-        data: {
-            userId: 4, username: 'employee3',
-            timestamp: new Date().toISOString(),
-            loginLocation: 'Tunisia/Sfax', ipAddress: '192.168.2.50',
-            deviceType: 'Windows Desktop', requestsLastMinute: 20,
-            bookingActions: 15, cancellationActions: 12
-        }
-    },
-    {
-        name: 'Off-Hours Access',
-        icon: Sunrise,
-        data: {
-            userId: 5, username: 'manager1',
-            timestamp: new Date(new Date().setHours(3, 30, 0)).toISOString(),
-            loginLocation: 'Tunisia/Tunis', ipAddress: '192.168.1.200',
-            deviceType: 'Mobile', requestsLastMinute: 2,
-            bookingActions: 0, cancellationActions: 0
-        }
-    },
-    {
-        name: 'Unknown Device',
-        icon: Monitor,
-        data: {
-            userId: 2, username: 'employee1',
-            timestamp: new Date().toISOString(),
-            loginLocation: 'Tunisia/Tunis', ipAddress: '45.33.32.156',
-            deviceType: 'Unknown', requestsLastMinute: 8,
-            bookingActions: 2, cancellationActions: 1
-        }
-    },
-];
 
 // ─── Chart Colors ────────────────────────────────────────────────
 const CHART_COLORS = ['#10b981', '#f59e0b', '#ef4444', '#dc2626'];
@@ -94,12 +23,6 @@ export default function SecurityMonitor() {
     const [expandedRow, setExpandedRow] = useState(null);
     const [clock, setClock] = useState(new Date());
     const [loading, setLoading] = useState(true);
-
-    // Simulation state
-    const [simForm, setSimForm] = useState(SCENARIOS[0].data);
-    const [simResult, setSimResult] = useState(null);
-    const [simLoading, setSimLoading] = useState(false);
-    const [activeScenario, setActiveScenario] = useState(0);
 
     // ─── Data Fetching ──────────────────────────────────────────
     const fetchData = useCallback(async () => {
@@ -128,39 +51,6 @@ export default function SecurityMonitor() {
         const t = setInterval(() => setClock(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
-
-    // ─── Simulation ─────────────────────────────────────────────
-    const runSimulation = async () => {
-        setSimLoading(true);
-        setSimResult(null);
-        try {
-            const res = await api.post('/admin/security/simulate', simForm);
-            setSimResult(res.data);
-        } catch (err) {
-            setSimResult({ status: 'ERROR', risk_score: -1, reason: 'Simulation failed: ' + (err.response?.data?.error || err.message), recommended_action: 'N/A' });
-        } finally {
-            setSimLoading(false);
-        }
-    };
-
-    const analyzeAndSave = async () => {
-        setSimLoading(true);
-        try {
-            await api.post('/admin/security/analyze', simForm);
-            await fetchData();
-            setSimResult({ status: 'SAVED', risk_score: 0, reason: 'Activity logged and analyzed successfully. Check the activity feed below.', recommended_action: 'allow' });
-        } catch (err) {
-            setSimResult({ status: 'ERROR', risk_score: -1, reason: 'Failed: ' + (err.response?.data?.error || err.message), recommended_action: 'N/A' });
-        } finally {
-            setSimLoading(false);
-        }
-    };
-
-    const selectScenario = (idx) => {
-        setActiveScenario(idx);
-        setSimForm({ ...SCENARIOS[idx].data, timestamp: new Date().toISOString() });
-        setSimResult(null);
-    };
 
     // ─── Helpers ─────────────────────────────────────────────────
     const getRiskClass = (score) => {
@@ -391,7 +281,7 @@ export default function SecurityMonitor() {
                     {filteredLogs.length === 0 ? (
                         <div style={{ padding: '3rem', textAlign: 'center', color: 'hsl(var(--muted-foreground))' }}>
                             <Shield size={40} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                            <p>No activity logs yet. Use the simulation panel above to generate test data.</p>
+                            <p>No activity logs recorded.</p>
                         </div>
                     ) : (
                         <table className="table-ui" style={{ minWidth: '800px' }}>

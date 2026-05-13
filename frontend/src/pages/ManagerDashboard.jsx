@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { 
@@ -15,6 +16,7 @@ import {
   X,
   AlertCircle,
   Trash2,
+  History,
   Calendar,
   UserPlus,
   UserMinus
@@ -429,213 +431,227 @@ export default function ManagerDashboard() {
                 )}
             </div>
 
-            <AnimatePresence>
-                {selectedEmployee && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setSelectedEmployee(null)}>
-                        <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="modal-content modal-modern-content" 
-                            onClick={e => e.stopPropagation()} 
-                            style={{ maxWidth: '600px' }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <div>
-                                    <h2 style={{ fontSize: '1.25rem' }}>Reservations: {selectedEmployee.fullName}</h2>
-                                    <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Manage individual bookings for this team member.</p>
+            {/* Employee Reservations Modal */}
+            {createPortal(
+                <AnimatePresence>
+                    {selectedEmployee && (
+                        <div key="employee-res-portal" className="modal-overlay modal-modern-overlay" onClick={() => setSelectedEmployee(null)}>
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="modal-content modal-modern-content" 
+                                onClick={e => e.stopPropagation()} 
+                                style={{ maxWidth: '600px' }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <div>
+                                        <h2 style={{ fontSize: '1.25rem' }}>Reservations: {selectedEmployee.fullName}</h2>
+                                        <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Manage individual bookings for this team member.</p>
+                                    </div>
+                                    <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setSelectedEmployee(null)} />
                                 </div>
-                                <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setSelectedEmployee(null)} />
-                            </div>
 
-                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                {empReservations.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '2rem' }}>No active reservations found.</div>
-                                ) : (
-                                    <table className="table-ui">
-                                        <thead>
-                                            <tr><th>Date</th><th>Resource</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            {empReservations.map(r => (
-                                                <tr key={r.id}>
-                                                    <td>{r.date}</td>
-                                                    <td>
-                                                        <div className="badge-ui badge-indigo">
-                                                            {r.chairId ? '🪑 Desk' : '🏢 Room'}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </div>
-
-                            <div className="modal-actions" style={{ marginTop: '2rem' }}>
-                                <button className="btn-ui btn-primary" onClick={() => setSelectedEmployee(null)}>Close</button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {commentModal && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setCommentModal(null)}>
-                        <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="modal-content modal-modern-content" 
-                            onClick={e => e.stopPropagation()} 
-                            style={{ maxWidth: '440px' }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div style={{ 
-                                    background: `hsl(var(--${commentModal.action === 'approve' ? 'success' : 'destructive'}) / 0.1)`, 
-                                    padding: '0.75rem', 
-                                    borderRadius: '0.75rem',
-                                    color: `hsl(var(--${commentModal.action === 'approve' ? 'success' : 'destructive'}))`
-                                }}>
-                                    {commentModal.action === 'approve' ? <CheckCircle2 size={24} /> : <XSquare size={24} />}
+                                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                    {empReservations.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '2rem' }}>No active reservations found.</div>
+                                    ) : (
+                                        <table className="table-ui">
+                                            <thead>
+                                                <tr><th>Date</th><th>Resource</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                {empReservations.map(r => (
+                                                    <tr key={r.id}>
+                                                        <td>{r.date}</td>
+                                                        <td>
+                                                            <div className="badge-ui badge-indigo">
+                                                                {r.chairId ? '🪑 Desk' : '🏢 Room'}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
                                 </div>
-                                <h2 style={{ fontSize: '1.25rem' }}>{commentModal.action === 'approve' ? 'Approve' : 'Reject'} Request</h2>
-                            </div>
 
-                            <div className="form-group">
-                                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <MessageSquare size={14} />
-                                    <span>Decision Feedback (Optional)</span>
-                                </label>
-                                <textarea
-                                    className="input-modern"
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
-                                    rows={4}
-                                    placeholder="Explain your decision to the employee..."
-                                    style={{ resize: 'none' }}
-                                />
-                            </div>
+                                <div className="modal-actions" style={{ marginTop: '2rem' }}>
+                                    <button className="btn-ui btn-primary" onClick={() => setSelectedEmployee(null)}>Close</button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
-                            <div className="modal-actions" style={{ marginTop: '2rem' }}>
-                                <button className="btn-ui btn-ghost" onClick={() => setCommentModal(null)}>Cancel</button>
-                                <button
-                                    className={`btn-ui ${commentModal.action === 'approve' ? 'btn-primary' : 'btn-danger'}`}
-                                    onClick={handleAction}
-                                    data-testid="confirm-decision-btn"
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Processing...' : `Confirm ${commentModal.action}`}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+            {/* Decision Modal (Approve/Reject) */}
+            {createPortal(
+                <AnimatePresence>
+                    {commentModal && (
+                        <div key="comment-modal-portal" className="modal-overlay modal-modern-overlay" onClick={() => setCommentModal(null)}>
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="modal-content modal-modern-content" 
+                                onClick={e => e.stopPropagation()} 
+                                style={{ maxWidth: '440px' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                                    <div style={{ 
+                                        background: `hsl(var(--${commentModal.action === 'approve' ? 'success' : 'destructive'}) / 0.1)`, 
+                                        padding: '0.75rem', 
+                                        borderRadius: '0.75rem',
+                                        color: `hsl(var(--${commentModal.action === 'approve' ? 'success' : 'destructive'}))`
+                                    }}>
+                                        {commentModal.action === 'approve' ? <CheckCircle2 size={24} /> : <XSquare size={24} />}
+                                    </div>
+                                    <h2 style={{ fontSize: '1.25rem' }}>{commentModal.action === 'approve' ? 'Approve' : 'Reject'} Request</h2>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <MessageSquare size={14} />
+                                        <span>Decision Feedback (Optional)</span>
+                                    </label>
+                                    <textarea
+                                        className="input-modern"
+                                        value={comment}
+                                        onChange={(e) => setComment(e.target.value)}
+                                        rows={4}
+                                        placeholder="Explain your decision to the employee..."
+                                        style={{ resize: 'none' }}
+                                    />
+                                </div>
+
+                                <div className="modal-actions" style={{ marginTop: '2rem' }}>
+                                    <button className="btn-ui btn-ghost" onClick={() => setCommentModal(null)}>Cancel</button>
+                                    <button
+                                        className={`btn-ui ${commentModal.action === 'approve' ? 'btn-primary' : 'btn-danger'}`}
+                                        onClick={handleAction}
+                                        data-testid="confirm-decision-btn"
+                                        disabled={loading}
+                                    >
+                                        {loading ? 'Processing...' : `Confirm ${commentModal.action}`}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
             {/* Add Employee Modal */}
-            <AnimatePresence>
-                {showAddModal && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowAddModal(false)}>
-                        <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="modal-content modal-modern-content" 
-                            onClick={e => e.stopPropagation()} 
-                            style={{ maxWidth: '520px' }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ background: 'hsl(var(--primary) / 0.1)', padding: '0.75rem', borderRadius: '0.75rem', color: 'hsl(var(--primary))' }}>
-                                        <UserPlus size={24} />
-                                    </div>
-                                    <div>
-                                        <h2 style={{ fontSize: '1.25rem' }}>Add Employee</h2>
-                                        <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Select from unassigned employees</p>
-                                    </div>
-                                </div>
-                                <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setShowAddModal(false)} />
-                            </div>
-
-                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                {unassignedEmployees.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '3rem' }}>
-                                        <div style={{ background: 'hsl(var(--secondary))', width: '56px', height: '56px', borderRadius: '99px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'hsl(var(--muted-foreground))' }}>
-                                            <Users size={28} />
+            {createPortal(
+                <AnimatePresence>
+                    {showAddModal && (
+                        <div key="add-employee-portal" className="modal-overlay modal-modern-overlay" onClick={() => setShowAddModal(false)}>
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="modal-content modal-modern-content" 
+                                onClick={e => e.stopPropagation()} 
+                                style={{ maxWidth: '520px' }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ background: 'hsl(var(--primary) / 0.1)', padding: '0.75rem', borderRadius: '0.75rem', color: 'hsl(var(--primary))' }}>
+                                            <UserPlus size={24} />
                                         </div>
-                                        <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.9rem' }}>No unassigned employees available.</p>
+                                        <div>
+                                            <h2 style={{ fontSize: '1.25rem' }}>Add Employee</h2>
+                                            <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Select from unassigned employees</p>
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {unassignedEmployees.map(emp => (
-                                            <div key={emp.id} style={{ 
-                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-                                                padding: '0.75rem 1rem', borderRadius: 'var(--radius)', 
-                                                border: '1px solid hsl(var(--border))', 
-                                                transition: 'background 0.15s',
-                                                background: 'hsl(var(--card))'
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                    <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '99px', background: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.875rem' }}>
-                                                        {emp.fullName?.charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{emp.fullName}</div>
-                                                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>@{emp.username} · {emp.email}</div>
-                                                    </div>
-                                                </div>
-                                                <button className="btn-ui btn-primary btn-sm" onClick={() => handleAddEmployee(emp.id)} disabled={loading}>
-                                                    <UserPlus size={14} />
-                                                    <span>Add</span>
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                    <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setShowAddModal(false)} />
+                                </div>
 
-                            <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
-                                <button className="btn-ui btn-ghost" onClick={() => setShowAddModal(false)}>Close</button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                    {unassignedEmployees.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '3rem' }}>
+                                            <div style={{ background: 'hsl(var(--secondary))', width: '56px', height: '56px', borderRadius: '99px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'hsl(var(--muted-foreground))' }}>
+                                                <Users size={28} />
+                                            </div>
+                                            <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.9rem' }}>No unassigned employees available.</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            {unassignedEmployees.map(emp => (
+                                                <div key={emp.id} style={{ 
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                                    padding: '0.75rem 1rem', borderRadius: 'var(--radius)', 
+                                                    border: '1px solid hsl(var(--border))', 
+                                                    transition: 'background 0.15s',
+                                                    background: 'hsl(var(--card))'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '99px', background: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.875rem' }}>
+                                                            {emp.fullName?.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{emp.fullName}</div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>@{emp.username} · {emp.email}</div>
+                                                        </div>
+                                                    </div>
+                                                    <button className="btn-ui btn-primary btn-sm" onClick={() => handleAddEmployee(emp.id)} disabled={loading}>
+                                                        <UserPlus size={14} />
+                                                        <span>Add</span>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+                                    <button className="btn-ui btn-ghost" onClick={() => setShowAddModal(false)}>Close</button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
             {/* Remove Employee Confirmation Modal */}
-            <AnimatePresence>
-                {confirmRemove && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setConfirmRemove(null)}>
-                        <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="modal-content modal-modern-content" 
-                            onClick={e => e.stopPropagation()} 
-                            style={{ maxWidth: '400px' }}
-                        >
-                            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                                <div style={{ background: 'hsl(var(--destructive) / 0.1)', color: 'hsl(var(--destructive))', width: '3rem', height: '3rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                                    <UserMinus size={24} />
+            {createPortal(
+                <AnimatePresence>
+                    {confirmRemove && (
+                        <div key="confirm-remove-portal" className="modal-overlay modal-modern-overlay" onClick={() => setConfirmRemove(null)}>
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="modal-content modal-modern-content" 
+                                onClick={e => e.stopPropagation()} 
+                                style={{ maxWidth: '400px' }}
+                            >
+                                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                                    <div style={{ background: 'hsl(var(--destructive) / 0.1)', color: 'hsl(var(--destructive))', width: '3rem', height: '3rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                        <UserMinus size={24} />
+                                    </div>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Remove Employee</h2>
+                                    <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', marginTop: '0.5rem' }}>
+                                        Are you sure you want to remove <strong>{confirmRemove.fullName}</strong> from your team?
+                                    </p>
                                 </div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Remove Employee</h2>
-                                <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', marginTop: '0.5rem' }}>
-                                    Are you sure you want to remove <strong>{confirmRemove.fullName}</strong> from your team?
-                                </p>
-                            </div>
 
-                            <div className="modal-actions">
-                                <button className="btn-ui btn-ghost" onClick={() => setConfirmRemove(null)}>Cancel</button>
-                                <button className="btn-ui btn-danger" onClick={() => handleRemoveEmployee(confirmRemove.id)} disabled={loading}>
-                                    {loading ? 'Removing…' : 'Remove'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                <div className="modal-actions">
+                                    <button className="btn-ui btn-ghost" onClick={() => setConfirmRemove(null)}>Cancel</button>
+                                    <button className="btn-ui btn-danger" onClick={() => handleRemoveEmployee(confirmRemove.id)} disabled={loading}>
+                                        {loading ? 'Removing…' : 'Remove'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 }

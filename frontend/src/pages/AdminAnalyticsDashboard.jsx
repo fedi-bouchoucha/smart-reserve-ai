@@ -65,16 +65,34 @@ export default function AdminAnalyticsDashboard() {
                         className="btn-ui btn-outline"
                         onClick={async () => {
                             try {
-                                const response = await api.get(`/admin/analytics/download-report?month=${selectedMonth}`, { responseType: 'blob' });
-                                const url = window.URL.createObjectURL(new Blob([response.data]));
+                                const response = await api.get(`/admin/analytics/download-report?month=${selectedMonth}`, { 
+                                    responseType: 'blob',
+                                    headers: {
+                                        'Accept': 'application/pdf'
+                                    }
+                                });
+                                
+                                // Create a blob from the response data
+                                const blob = new Blob([response.data], { type: 'application/pdf' });
+                                
+                                // Create a link element
+                                const url = window.URL.createObjectURL(blob);
                                 const link = document.createElement('a');
                                 link.href = url;
                                 link.setAttribute('download', `office_usage_report_${selectedMonth}.pdf`);
+                                
+                                // Append to the body and click
                                 document.body.appendChild(link);
                                 link.click();
-                                link.remove();
+                                
+                                // Clean up
+                                setTimeout(() => {
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                }, 100);
                             } catch (e) {
-                                alert('Failed to download report');
+                                console.error('Download error:', e);
+                                alert('Failed to download report. Please check if the server is running and try again.');
                             }
                         }}
                     >

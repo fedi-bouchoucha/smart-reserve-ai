@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { 
@@ -31,7 +32,7 @@ export default function Profile() {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
     const [passwordError, setPasswordError] = useState('');
-
+    
     useEffect(() => {
         if (message.text) {
             const timer = setTimeout(() => setMessage({ type: '', text: '' }), 5000);
@@ -289,78 +290,81 @@ export default function Profile() {
             </div>
 
             {/* Change Password Modal */}
-            <AnimatePresence>
-                {showPasswordModal && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowPasswordModal(false)}>
-                        <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="modal-content modal-modern-content" 
-                            onClick={e => e.stopPropagation()} 
-                            style={{ maxWidth: '400px' }}
-                        >
-                            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                                <div style={{ background: 'hsl(var(--destructive) / 0.1)', color: 'hsl(var(--destructive))', width: '3rem', height: '3rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                                    <Key size={24} />
-                                </div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Change Password</h2>
-                                <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>Update your security credentials</p>
-                            </div>
-
-                            {passwordError && (
-                                <div className="alert alert-error" style={{ marginBottom: '1.5rem', fontSize: '0.8rem' }}>
-                                    <AlertCircle size={16} />
-                                    <span>{passwordError}</span>
-                                </div>
-                            )}
-
-                            <form onSubmit={handleChangePassword}>
-                                <div className="form-group">
-                                    <label className="form-label">Current Password</label>
-                                    <input 
-                                        type="password" 
-                                        className="input-modern" 
-                                        value={passwords.oldPassword}
-                                        onChange={e => setPasswords({ ...passwords, oldPassword: e.target.value })}
-                                        required 
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">New Password</label>
-                                    <input 
-                                        type="password" 
-                                        className="input-modern" 
-                                        value={passwords.newPassword}
-                                        onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })}
-                                        required 
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                                <div className="form-group" style={{ marginBottom: '2rem' }}>
-                                    <label className="form-label">Confirm New Password</label>
-                                    <input 
-                                        type="password" 
-                                        className="input-modern" 
-                                        value={passwords.confirmPassword}
-                                        onChange={e => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                                        required 
-                                        placeholder="••••••••"
-                                    />
+            {createPortal(
+                <AnimatePresence>
+                    {showPasswordModal && (
+                        <div key="password-modal-portal" className="modal-overlay modal-modern-overlay" onClick={() => setShowPasswordModal(false)}>
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="modal-content modal-modern-content" 
+                                onClick={e => e.stopPropagation()} 
+                                style={{ maxWidth: '400px' }}
+                            >
+                                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                                    <div style={{ background: 'hsl(var(--destructive) / 0.1)', color: 'hsl(var(--destructive))', width: '3rem', height: '3rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                        <Key size={24} />
+                                    </div>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Change Password</h2>
+                                    <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>Update your security credentials</p>
                                 </div>
 
-                                <div className="modal-actions">
-                                    <button type="button" className="btn-ui btn-ghost" onClick={() => setShowPasswordModal(false)}>Cancel</button>
-                                    <button type="submit" className="btn-ui btn-primary" disabled={passwordLoading}>
-                                        {passwordLoading ? 'Updating…' : 'Update Password'}
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                {passwordError && (
+                                    <div className="alert alert-error" style={{ marginBottom: '1.5rem', fontSize: '0.8rem' }}>
+                                        <AlertCircle size={16} />
+                                        <span>{passwordError}</span>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleChangePassword}>
+                                    <div className="form-group">
+                                        <label className="form-label">Current Password</label>
+                                        <input 
+                                            type="password" 
+                                            className="input-modern" 
+                                            value={passwords.oldPassword}
+                                            onChange={e => setPasswords({ ...passwords, oldPassword: e.target.value })}
+                                            required 
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">New Password</label>
+                                        <input 
+                                            type="password" 
+                                            className="input-modern" 
+                                            value={passwords.newPassword}
+                                            onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })}
+                                            required 
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ marginBottom: '2rem' }}>
+                                        <label className="form-label">Confirm New Password</label>
+                                        <input 
+                                            type="password" 
+                                            className="input-modern" 
+                                            value={passwords.confirmPassword}
+                                            onChange={e => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                                            required 
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
+
+                                    <div className="modal-actions">
+                                        <button type="button" className="btn-ui btn-ghost" onClick={() => setShowPasswordModal(false)}>Cancel</button>
+                                        <button type="submit" className="btn-ui btn-primary" disabled={passwordLoading}>
+                                            {passwordLoading ? 'Updating…' : 'Update Password'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 }

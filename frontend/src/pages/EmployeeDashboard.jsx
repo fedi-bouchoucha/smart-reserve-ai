@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import OfficeMap from './OfficeMap';
@@ -681,106 +682,115 @@ export default function EmployeeDashboard() {
             )}
 
             {/* ==================== DESK PICKER MODAL ==================== */}
-            <AnimatePresence>
-            {showDeskPicker && (
-                    <div className="modal-overlay modal-modern-overlay" style={{ zIndex: 1000 }} onClick={() => setShowDeskPicker(null)}>
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95 }}
-                            className="modal-content modal-modern-content"
-                            onClick={e => e.stopPropagation()}
-                            style={{ maxWidth: '95vw', width: '1200px', maxHeight: '90vh', overflow: 'auto', padding: '1.5rem' }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                <div>
-                                    <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Select a Desk</h2>
-                                    <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                                        {showDeskPicker.dateFormatted} — Click a desk on the map, then select a chair
-                                    </p>
+            {createPortal(
+                <AnimatePresence>
+                    {showDeskPicker && (
+                        <div key="desk-picker-portal" className="modal-overlay modal-modern-overlay" style={{ zIndex: 1000 }} onClick={() => setShowDeskPicker(null)}>
+                            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95 }}
+                                className="modal-content modal-modern-content"
+                                onClick={e => e.stopPropagation()}
+                                style={{ maxWidth: '95vw', width: '1200px', maxHeight: '90vh', overflow: 'auto', padding: '1.5rem' }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <div>
+                                        <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Select a Desk</h2>
+                                        <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                                            {showDeskPicker.dateFormatted} — Click a desk on the map, then select a chair
+                                        </p>
+                                    </div>
+                                    <button className="btn-ui btn-ghost" style={{ padding: '0.25rem' }} onClick={() => setShowDeskPicker(null)}><X size={18} /></button>
                                 </div>
-                                <button className="btn-ui btn-ghost" style={{ padding: '0.25rem' }} onClick={() => setShowDeskPicker(null)}><X size={18} /></button>
-                            </div>
-                            <OfficeMap
-                                pickerMode={true}
-                                pickerDate={showDeskPicker.date}
-                                onChairSelected={(chair) => handlePickDesk(chair)}
-                                onClose={() => setShowDeskPicker(null)}
-                            />
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                <OfficeMap
+                                    pickerMode={true}
+                                    pickerDate={showDeskPicker.date}
+                                    onChairSelected={(chair) => handlePickDesk(chair)}
+                                    onClose={() => setShowDeskPicker(null)}
+                                />
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
             {/* ==================== CHANGE REQUEST MODAL ==================== */}
-            <AnimatePresence>
-                {showChangeModal && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowChangeModal(null)}>
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9 }} className="modal-content modal-modern-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-                            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Request Change</h2>
-                            <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '1.5rem' }}>
-                                For booking on <strong>{showChangeModal.date}</strong> ({showChangeModal.chairInfo || showChangeModal.meetingRoomName}).
-                            </p>
-                            
-                            <div className="form-group">
-                                <label className="form-label">New Date</label>
-                                <input type="date" className="input-modern" value={newChangeDate} onChange={e => setNewChangeDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
-                            </div>
-
-                            <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                <label className="form-label">Select a Desk</label>
-                                <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem', padding: '0.5rem' }}>
-                                    {!newChangeDate ? (
-                                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: '1rem' }}>Select a date first</div>
-                                    ) : modalAvailableChairs.length === 0 ? (
-                                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: '1rem' }}>No desks available</div>
-                                    ) : modalAvailableChairs.map(r => (
-                                        <div key={r.id}
-                                            className={`resource-card ${newChangeChairId === r.id ? 'selected' : ''}`}
-                                            onClick={() => setNewChangeChairId(r.id)}
-                                            style={{ padding: '0.5rem', fontSize: '0.85rem' }}
-                                        >
-                                            <div style={{ fontWeight: 600 }}>Desk {r.number}</div>
-                                            <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Floor {r.floor}</div>
-                                        </div>
-                                    ))}
+            {createPortal(
+                <AnimatePresence>
+                    {showChangeModal && (
+                        <div key="change-modal-portal" className="modal-overlay modal-modern-overlay" onClick={() => setShowChangeModal(null)}>
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9 }} className="modal-content modal-modern-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+                                <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Request Change</h2>
+                                <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '1.5rem' }}>
+                                    For booking on <strong>{showChangeModal.date}</strong> ({showChangeModal.chairInfo || showChangeModal.meetingRoomName}).
+                                </p>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">New Date</label>
+                                    <input type="date" className="input-modern" value={newChangeDate} onChange={e => setNewChangeDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
                                 </div>
-                            </div>
 
-                            <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', marginTop: '1rem' }}>Your manager will review this request.</p>
-                            
-                            <div className="modal-actions" style={{ marginTop: '2rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                                <button className="btn-ui btn-ghost" onClick={() => setShowChangeModal(null)}>Cancel</button>
-                                <button className="btn-ui btn-primary" onClick={handleChangeRequest} disabled={loading || !newChangeDate || !newChangeChairId}>
-                                    {loading ? 'Sending...' : 'Submit Request'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-
-            {/* ==================== REASON MODAL ==================== */}
-            <AnimatePresence>
-                {showReasonModal && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowReasonModal(null)}>
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9 }} className="modal-content modal-modern-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <AlertTriangle size={24} style={{ color: showReasonModal.status === 'BOOKED' ? '#f44336' : showReasonModal.status === 'CAPACITY_REACHED' ? '#ff9800' : '#9e9e9e' }} />
-                                    <div>
-                                        <h3 style={{ fontWeight: 800 }}>Unavailable</h3>
-                                        <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>{showReasonModal.date}</p>
+                                <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                                    <label className="form-label">Select a Desk</label>
+                                    <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem', padding: '0.5rem' }}>
+                                        {!newChangeDate ? (
+                                            <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: '1rem' }}>Select a date first</div>
+                                        ) : modalAvailableChairs.length === 0 ? (
+                                            <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: '1rem' }}>No desks available</div>
+                                        ) : modalAvailableChairs.map(r => (
+                                            <div key={r.id}
+                                                className={`resource-card ${newChangeChairId === r.id ? 'selected' : ''}`}
+                                                onClick={() => setNewChangeChairId(r.id)}
+                                                style={{ padding: '0.5rem', fontSize: '0.85rem' }}
+                                            >
+                                                <div style={{ fontWeight: 600 }}>Desk {r.number}</div>
+                                                <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Floor {r.floor}</div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                                <button className="btn-ui btn-ghost" style={{ padding: '0.25rem' }} onClick={() => setShowReasonModal(null)}><X size={18} /></button>
-                            </div>
-                            <div style={{ background: 'hsl(var(--secondary))', padding: '1.25rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
-                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'hsl(var(--muted-foreground))', marginBottom: '0.5rem', fontWeight: 700 }}>Reason</div>
-                                <div style={{ fontWeight: 500, lineHeight: 1.5 }}>"{showReasonModal.reason}"</div>
-                            </div>
-                            <button className="btn-ui btn-primary" style={{ width: '100%' }} onClick={() => setShowReasonModal(null)}>OK</button>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+
+                                <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', marginTop: '1rem' }}>Your manager will review this request.</p>
+                                
+                                <div className="modal-actions" style={{ marginTop: '2rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                    <button className="btn-ui btn-ghost" onClick={() => setShowChangeModal(null)}>Cancel</button>
+                                    <button className="btn-ui btn-primary" onClick={handleChangeRequest} disabled={loading || !newChangeDate || !newChangeChairId}>
+                                        {loading ? 'Sending...' : 'Submit Request'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
+
+            {/* ==================== REASON MODAL ==================== */}
+            {createPortal(
+                <AnimatePresence>
+                    {showReasonModal && (
+                        <div key="reason-modal-portal" className="modal-overlay modal-modern-overlay" onClick={() => setShowReasonModal(null)}>
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9 }} className="modal-content modal-modern-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <AlertTriangle size={24} style={{ color: showReasonModal.status === 'BOOKED' ? '#f44336' : showReasonModal.status === 'CAPACITY_REACHED' ? '#ff9800' : '#9e9e9e' }} />
+                                        <div>
+                                            <h3 style={{ fontWeight: 800 }}>Unavailable</h3>
+                                            <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>{showReasonModal.date}</p>
+                                        </div>
+                                    </div>
+                                    <button className="btn-ui btn-ghost" style={{ padding: '0.25rem' }} onClick={() => setShowReasonModal(null)}><X size={18} /></button>
+                                </div>
+                                <div style={{ background: 'hsl(var(--secondary))', padding: '1.25rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
+                                    <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'hsl(var(--muted-foreground))', marginBottom: '0.5rem', fontWeight: 700 }}>Reason</div>
+                                    <div style={{ fontWeight: 500, lineHeight: 1.5 }}>"{showReasonModal.reason}"</div>
+                                </div>
+                                <button className="btn-ui btn-primary" style={{ width: '100%' }} onClick={() => setShowReasonModal(null)}>OK</button>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 }

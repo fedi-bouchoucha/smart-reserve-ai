@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Calendar, 
@@ -20,9 +20,10 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import NotificationHub from './NotificationHub';
 
-export default function Layout({ children }) {
+export default function Layout() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isDark, setIsDark] = useState(localStorage.getItem('theme') === 'dark');
 
     useEffect(() => {
@@ -175,13 +176,18 @@ export default function Layout({ children }) {
             </aside>
 
             <main className="main-scroll">
-                <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                >
-                    {children}
-                </motion.div>
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={location.pathname}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        style={{ minHeight: '100%' }}
+                    >
+                        <Outlet />
+                    </motion.div>
+                </AnimatePresence>
             </main>
             <NotificationHub />
         </div>

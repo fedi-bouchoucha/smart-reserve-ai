@@ -74,48 +74,50 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/" element={<HomeRedirect />} />
-                    <Route path="/employee" element={
-                        <ProtectedRoute roles={['EMPLOYEE']}>
-                            <Layout><EmployeeDashboard /></Layout>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/manager" element={
-                        <ProtectedRoute roles={['MANAGER']}>
-                            <Layout><ManagerDashboard /></Layout>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/admin" element={
-                        <ProtectedRoute roles={['ADMIN']}>
-                            <Layout><AdminDashboard /></Layout>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/admin/analytics" element={
-                        <ProtectedRoute roles={['ADMIN']}>
-                            <Layout><AdminAnalyticsDashboard /></Layout>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/admin/security" element={
-                        <ProtectedRoute roles={['ADMIN']}>
-                            <Layout><SecurityMonitor /></Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/admin/performance" element={
-                        <ProtectedRoute roles={['ADMIN']}>
-                            <Layout><PerformanceAnalytics /></Layout>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/meeting-rooms" element={
-                        <ProtectedRoute roles={['EMPLOYEE']}>
-                            <Layout><MeetingRoomBooking /></Layout>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/profile" element={
-                        <ProtectedRoute roles={['EMPLOYEE', 'MANAGER', 'ADMIN']}>
-                            <Layout><Profile /></Layout>
-                        </ProtectedRoute>
-                    } />
+                    
+                    {/* Nested Layout Route for Authenticated Users */}
+                    <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                        <Route path="/employee" element={
+                            <ProtectedRoute roles={['EMPLOYEE']}>
+                                <EmployeeDashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/manager" element={
+                            <ProtectedRoute roles={['MANAGER']}>
+                                <ManagerDashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/admin" element={
+                            <ProtectedRoute roles={['ADMIN']}>
+                                <AdminDashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/admin/analytics" element={
+                            <ProtectedRoute roles={['ADMIN']}>
+                                <AdminAnalyticsDashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/admin/security" element={
+                            <ProtectedRoute roles={['ADMIN']}>
+                                <SecurityMonitor />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/admin/performance" element={
+                            <ProtectedRoute roles={['ADMIN']}>
+                                <PerformanceAnalytics />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/meeting-rooms" element={
+                            <ProtectedRoute roles={['EMPLOYEE']}>
+                                <MeetingRoomBooking />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/profile" element={
+                            <ProtectedRoute roles={['EMPLOYEE', 'MANAGER', 'ADMIN']}>
+                                <Profile />
+                            </ProtectedRoute>
+                        } />
+                    </Route>
                 </Routes>
             </BrowserRouter>
             <Toaster />

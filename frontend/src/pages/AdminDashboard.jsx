@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -324,199 +325,205 @@ export default function AdminDashboard() {
                 )}
             </div>
 
-            <AnimatePresence>
-                {showUserModal && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowUserModal(false)}>
-                        <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="modal-content modal-modern-content" 
-                            onClick={e => e.stopPropagation()} 
-                            style={{ maxWidth: '500px' }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h2 style={{ fontSize: '1.25rem' }}>{editingUser ? 'Update User Identity' : 'Register New User'}</h2>
-                                <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setShowUserModal(false)} />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div className="form-group">
-                                    <label className="form-label">Full Name</label>
-                                    <input className="input-modern" value={userForm.fullName} onChange={e => setUserForm({ ...userForm, fullName: e.target.value })} required />
+            {createPortal(
+                <AnimatePresence>
+                    {showUserModal && (
+                        <div key="user-modal-portal" className="modal-overlay modal-modern-overlay" onClick={() => setShowUserModal(false)}>
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="modal-content modal-modern-content" 
+                                onClick={e => e.stopPropagation()} 
+                                style={{ maxWidth: '500px' }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <h2 style={{ fontSize: '1.25rem' }}>{editingUser ? 'Update User Identity' : 'Register New User'}</h2>
+                                    <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setShowUserModal(false)} />
                                 </div>
-                                <div className="form-group">
-                                    <label className="form-label">Username</label>
-                                    <input className="input-modern" value={userForm.username} onChange={e => setUserForm({ ...userForm, username: e.target.value })} required disabled={!!editingUser} />
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div className="form-group">
+                                        <label className="form-label">Full Name</label>
+                                        <input className="input-modern" value={userForm.fullName} onChange={e => setUserForm({ ...userForm, fullName: e.target.value })} required />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Username</label>
+                                        <input className="input-modern" value={userForm.username} onChange={e => setUserForm({ ...userForm, username: e.target.value })} required disabled={!!editingUser} />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Email Address</label>
-                                <input className="input-modern" type="email" value={userForm.email} onChange={e => setUserForm({ ...userForm, email: e.target.value })} required />
-                            </div>
-
-                            {!editingUser && (
                                 <div className="form-group">
-                                    <label className="form-label">Initial Password</label>
-                                    <input className="input-modern" type="password" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} required />
+                                    <label className="form-label">Email Address</label>
+                                    <input className="input-modern" type="email" value={userForm.email} onChange={e => setUserForm({ ...userForm, email: e.target.value })} required />
                                 </div>
-                            )}
 
-                            <div className="form-group">
-                                <label className="form-label">System Role</label>
-                                <select className="input-modern" value={userForm.role} onChange={e => setUserForm({ ...userForm, role: e.target.value })}>
-                                    <option value="EMPLOYEE">Standard Employee</option>
-                                    <option value="MANAGER">Team Manager</option>
-                                    <option value="ADMIN">System Administrator</option>
-                                </select>
-                            </div>
+                                {!editingUser && (
+                                    <div className="form-group">
+                                        <label className="form-label">Initial Password</label>
+                                        <input className="input-modern" type="password" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} required />
+                                    </div>
+                                )}
 
-                            <div className="form-group">
-                                <label className="form-label">Target Attendance (%)</label>
-                                <input className="input-modern" type="number" min="0" max="100" value={userForm.targetAttendance} onChange={e => setUserForm({ ...userForm, targetAttendance: parseInt(e.target.value) || 0 })} required />
-                            </div>
+                                <div className="form-group">
+                                    <label className="form-label">System Role</label>
+                                    <select className="input-modern" value={userForm.role} onChange={e => setUserForm({ ...userForm, role: e.target.value })}>
+                                        <option value="EMPLOYEE">Standard Employee</option>
+                                        <option value="MANAGER">Team Manager</option>
+                                        <option value="ADMIN">System Administrator</option>
+                                    </select>
+                                </div>
 
-                            <div className="modal-actions" style={{ marginTop: '2.5rem' }}>
-                                <button className="btn-ui btn-ghost" onClick={() => setShowUserModal(false)}>Cancel</button>
-                                <button className="btn-ui btn-primary" onClick={handleSaveUser}>
-                                    {loading ? 'Processing...' : 'Save User Profile'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                <div className="form-group">
+                                    <label className="form-label">Target Attendance (%)</label>
+                                    <input className="input-modern" type="number" min="0" max="100" value={userForm.targetAttendance} onChange={e => setUserForm({ ...userForm, targetAttendance: parseInt(e.target.value) || 0 })} required />
+                                </div>
+
+                                <div className="modal-actions" style={{ marginTop: '2.5rem' }}>
+                                    <button className="btn-ui btn-ghost" onClick={() => setShowUserModal(false)}>Cancel</button>
+                                    <button className="btn-ui btn-primary" onClick={handleSaveUser}>
+                                        {loading ? 'Processing...' : 'Save User Profile'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
             {/* Auto-Assign Modal */}
-            <AnimatePresence>
-                {showAutoAssignModal && (
-                    <div className="modal-overlay modal-modern-overlay" onClick={() => setShowAutoAssignModal(false)}>
-                        <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="modal-content modal-modern-content" 
-                            onClick={e => e.stopPropagation()} 
-                            style={{ maxWidth: '560px' }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{ 
-                                        background: 'linear-gradient(135deg, hsl(270 70% 55% / 0.15), hsl(290 70% 50% / 0.15))', 
-                                        padding: '0.6rem', 
-                                        borderRadius: '0.75rem',
-                                        color: 'hsl(270 70% 55%)'
-                                    }}>
-                                        <Shuffle size={22} />
+            {createPortal(
+                <AnimatePresence>
+                    {showAutoAssignModal && (
+                        <div key="auto-assign-portal" className="modal-overlay modal-modern-overlay" onClick={() => setShowAutoAssignModal(false)}>
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="modal-content modal-modern-content" 
+                                onClick={e => e.stopPropagation()} 
+                                style={{ maxWidth: '560px' }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div style={{ 
+                                            background: 'linear-gradient(135deg, hsl(270 70% 55% / 0.15), hsl(290 70% 50% / 0.15))', 
+                                            padding: '0.6rem', 
+                                            borderRadius: '0.75rem',
+                                            color: 'hsl(270 70% 55%)'
+                                        }}>
+                                            <Shuffle size={22} />
+                                        </div>
+                                        <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Auto-Assign Chairs</h2>
                                     </div>
-                                    <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Auto-Assign Chairs</h2>
+                                    <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setShowAutoAssignModal(false)} />
                                 </div>
-                                <X size={20} style={{ cursor: 'pointer', color: 'hsl(var(--muted-foreground))' }} onClick={() => setShowAutoAssignModal(false)} />
-                            </div>
 
-                            <div style={{ 
-                                background: 'hsl(var(--muted) / 0.3)', 
-                                borderRadius: '0.75rem', 
-                                padding: '1rem 1.25rem', 
-                                marginBottom: '1.5rem',
-                                display: 'flex',
-                                gap: '0.75rem',
-                                alignItems: 'flex-start'
-                            }}>
-                                <Info size={18} style={{ color: 'hsl(var(--primary))', marginTop: '2px', flexShrink: 0 }} />
-                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
-                                    This will randomly assign chairs for <strong>all working days</strong> of the selected month 
-                                    to employees who <strong>did not reserve</strong> during the booking window (1st–20th). 
-                                    For employees who did reserve, their remaining unbooked working days will be set to <strong>Home Office</strong>.
-                                </p>
-                            </div>
+                                <div style={{ 
+                                    background: 'hsl(var(--muted) / 0.3)', 
+                                    borderRadius: '0.75rem', 
+                                    padding: '1rem 1.25rem', 
+                                    marginBottom: '1.5rem',
+                                    display: 'flex',
+                                    gap: '0.75rem',
+                                    alignItems: 'flex-start'
+                                }}>
+                                    <Info size={18} style={{ color: 'hsl(var(--primary))', marginTop: '2px', flexShrink: 0 }} />
+                                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
+                                        This will randomly assign chairs for <strong>all working days</strong> of the selected month 
+                                        to employees who <strong>did not reserve</strong> during the booking window (1st–20th). 
+                                        For employees who did reserve, their remaining unbooked working days will be set to <strong>Home Office</strong>.
+                                    </p>
+                                </div>
 
-                            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                                <label className="form-label">Target Month</label>
-                                <input 
-                                    className="input-modern" 
-                                    type="month" 
-                                    value={autoAssignMonth}
-                                    onChange={(e) => setAutoAssignMonth(e.target.value)}
-                                />
-                            </div>
+                                <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                                    <label className="form-label">Target Month</label>
+                                    <input 
+                                        className="input-modern" 
+                                        type="month" 
+                                        value={autoAssignMonth}
+                                        onChange={(e) => setAutoAssignMonth(e.target.value)}
+                                    />
+                                </div>
 
-                            {autoAssignResult && (
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    style={{ marginBottom: '1.5rem' }}
-                                >
-                                    <div style={{ 
-                                        background: 'hsl(var(--success) / 0.08)', 
-                                        border: '1px solid hsl(var(--success) / 0.2)', 
-                                        borderRadius: '0.75rem', 
-                                        padding: '1.25rem' 
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                                            <Zap size={18} style={{ color: 'hsl(var(--success))' }} />
-                                            <span style={{ fontWeight: 700, color: 'hsl(var(--success))' }}>Assignment Complete</span>
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-                                            <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
-                                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))' }}>{autoAssignResult.totalEmployeesProcessed}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fully Assigned</div>
+                                {autoAssignResult && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        style={{ marginBottom: '1.5rem' }}
+                                    >
+                                        <div style={{ 
+                                            background: 'hsl(var(--success) / 0.08)', 
+                                            border: '1px solid hsl(var(--success) / 0.2)', 
+                                            borderRadius: '0.75rem', 
+                                            padding: '1.25rem' 
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                                <Zap size={18} style={{ color: 'hsl(var(--success))' }} />
+                                                <span style={{ fontWeight: 700, color: 'hsl(var(--success))' }}>Assignment Complete</span>
                                             </div>
-                                            <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
-                                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--success))' }}>{autoAssignResult.totalReservationsCreated}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desks Booked</div>
-                                            </div>
-                                            <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
-                                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(180, 70%, 45%)' }}>{autoAssignResult.totalHomeOfficeAssigned}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Home Offices</div>
-                                            </div>
-                                        </div>
-
-                                        {autoAssignResult.skippedEmployees?.length > 0 && (
-                                            <div style={{ marginTop: '1rem' }}>
-                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--muted-foreground))' }}>Partial Reservations:</div>
-                                                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>
-                                                    {autoAssignResult.skippedEmployees.map((e, i) => (
-                                                        <div key={i} style={{ padding: '0.2rem 0' }}>• {e}</div>
-                                                    ))}
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                                                <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
+                                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))' }}>{autoAssignResult.totalEmployeesProcessed}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fully Assigned</div>
+                                                </div>
+                                                <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
+                                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--success))' }}>{autoAssignResult.totalReservationsCreated}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desks Booked</div>
+                                                </div>
+                                                <div style={{ textAlign: 'center', padding: '0.75rem', background: 'hsl(var(--background))', borderRadius: '0.5rem' }}>
+                                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(180, 70%, 45%)' }}>{autoAssignResult.totalHomeOfficeAssigned}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Home Offices</div>
                                                 </div>
                                             </div>
-                                        )}
 
-                                        {autoAssignResult.warnings?.length > 0 && (
-                                            <div style={{ marginTop: '1rem' }}>
-                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--warning))' }}>⚠ Warnings:</div>
-                                                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--warning))' }}>
-                                                    {autoAssignResult.warnings.map((w, i) => (
-                                                        <div key={i} style={{ padding: '0.2rem 0' }}>• {w}</div>
-                                                    ))}
+                                            {autoAssignResult.skippedEmployees?.length > 0 && (
+                                                <div style={{ marginTop: '1rem' }}>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--muted-foreground))' }}>Partial Reservations:</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>
+                                                        {autoAssignResult.skippedEmployees.map((e, i) => (
+                                                            <div key={i} style={{ padding: '0.2rem 0' }}>• {e}</div>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            )}
+                                            )}
 
-                            <div className="modal-actions" style={{ marginTop: '1rem' }}>
-                                <button className="btn-ui btn-ghost" onClick={() => setShowAutoAssignModal(false)}>Close</button>
-                                <button 
-                                    className="btn-ui btn-primary" 
-                                    onClick={handleAutoAssign} 
-                                    disabled={autoAssignLoading}
-                                    style={{ background: 'linear-gradient(135deg, hsl(270 70% 55%), hsl(290 70% 50%))', border: 'none' }}
-                                >
-                                    {autoAssignLoading ? (
-                                        <><RefreshCcw size={16} className="spin" /> Processing...</>
-                                    ) : (
-                                        <><Shuffle size={16} /> Run Auto-Assignment</>
-                                    )}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                            {autoAssignResult.warnings?.length > 0 && (
+                                                <div style={{ marginTop: '1rem' }}>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--warning))' }}>⚠ Warnings:</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'hsl(var(--warning))' }}>
+                                                        {autoAssignResult.warnings.map((w, i) => (
+                                                            <div key={i} style={{ padding: '0.2rem 0' }}>• {w}</div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                <div className="modal-actions" style={{ marginTop: '1rem' }}>
+                                    <button className="btn-ui btn-ghost" onClick={() => setShowAutoAssignModal(false)}>Close</button>
+                                    <button 
+                                        className="btn-ui btn-primary" 
+                                        onClick={handleAutoAssign} 
+                                        disabled={autoAssignLoading}
+                                        style={{ background: 'linear-gradient(135deg, hsl(270 70% 55%), hsl(290 70% 50%))', border: 'none' }}
+                                    >
+                                        {autoAssignLoading ? (
+                                            <><RefreshCcw size={16} className="spin" /> Processing...</>
+                                        ) : (
+                                            <><Shuffle size={16} /> Run Auto-Assignment</>
+                                        )}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 }
