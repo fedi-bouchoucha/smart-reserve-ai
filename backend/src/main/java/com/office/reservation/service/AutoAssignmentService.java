@@ -105,6 +105,16 @@ public class AutoAssignmentService {
                 List<Chair> availableChairs = chairRepository.findAvailableChairs(
                         workDay, defaultStart, defaultEnd, Arrays.asList(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_APPROVAL, ReservationStatus.AUTO_ASSIGNED));
 
+                // Exclude fixed desks from being randomly assigned to other employees
+                availableChairs = availableChairs.stream()
+                    .filter(c -> {
+                        String name = c.getEmplacement().getName();
+                        return !(name.equals("1") || name.equalsIgnoreCase("E01") ||
+                                 name.equals("43") || name.equalsIgnoreCase("E43") ||
+                                 name.equals("44") || name.equalsIgnoreCase("E44"));
+                    })
+                    .collect(Collectors.toList());
+
                 if (availableChairs.isEmpty()) {
                     warnings.add("No available chairs on " + workDay + " for " + employee.getFullName());
                     continue;
