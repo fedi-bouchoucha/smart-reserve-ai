@@ -14,12 +14,17 @@ export default function SmartSuggestModal({ isOpen, onClose, selectedDate, avail
     if (isOpen) {
       generateRecommendations();
     } else {
-      setRecommendations([]);
+      // Don't clear recommendations immediately to allow caching
       setError(null);
     }
   }, [isOpen]);
 
   const generateRecommendations = async () => {
+    // Basic cache check: if we already have recommendations for this date, don't re-fetch
+    if (recommendations.length > 0 && recommendations[0].date === selectedDate) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -54,7 +59,8 @@ export default function SmartSuggestModal({ isOpen, onClose, selectedDate, avail
       };
 
       const res = await api.post('/recommendations/generate', payload);
-      setRecommendations(res.data.recommendations || []);
+      const newRecs = (res.data.recommendations || []).map(r => ({ ...r, date: selectedDate }));
+      setRecommendations(newRecs);
     } catch (err) {
       console.error('AI Suggestion error:', err);
       setError('Smart suggestions are temporarily unavailable. Please check your connection or try again later.');

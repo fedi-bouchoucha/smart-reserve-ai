@@ -97,7 +97,7 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
             // Log activity on significant actions or high request rates
-            if (isBooking || isCancellation || isLogin || requestsPerMinute > 30) {
+            if (isBooking || isCancellation || isLogin || requestsPerMinute > 80) {
                 ActivityLogRequest logRequest = new ActivityLogRequest();
                 logRequest.setUserId(user.getId());
                 logRequest.setUsername(username);
@@ -110,16 +110,14 @@ public class JwtFilter extends OncePerRequestFilter {
                 logRequest.setBookingActions(bookingCounts.getOrDefault(user.getId(), new AtomicInteger(0)).get());
                 logRequest.setCancellationActions(cancellationCounts.getOrDefault(user.getId(), new AtomicInteger(0)).get());
 
-                // Analyze asynchronously (non-blocking)
-                Thread asyncThread = new Thread(() -> {
+                // Analyze asynchronously (non-blocking) - Use a single thread or executor for better resource management
+                new Thread(() -> {
                     try {
                         anomalyDetectionService.analyzeAndSave(logRequest);
-                    } catch (Exception ignored) {
-                        // Fail silently — security logging should never break the main flow
+                    } catch (Exception e) {
+                        // Silent fail for security logs
                     }
-                });
-                asyncThread.setDaemon(true);
-                asyncThread.start();
+                }).start();
             }
         } catch (Exception ignored) {
             // Security tracking failures must never disrupt the request pipeline

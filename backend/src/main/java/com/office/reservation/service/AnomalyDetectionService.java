@@ -137,16 +137,16 @@ public class AnomalyDetectionService {
     }
 
     private int checkExcessiveRequests(ActivityLog log, List<String> reasons) {
-        if (log.getRequestsLastMinute() > 200) {
+        if (log.getRequestsLastMinute() > 500) {
             reasons.add("Critical request flood: " + log.getRequestsLastMinute() + " req/min — automated attack detected");
             return 40;
-        } else if (log.getRequestsLastMinute() > 100) {
+        } else if (log.getRequestsLastMinute() > 250) {
             reasons.add("Extreme request rate: " + log.getRequestsLastMinute() + " req/min — likely automated bot");
             return 30;
-        } else if (log.getRequestsLastMinute() > 60) {
+        } else if (log.getRequestsLastMinute() > 150) {
             reasons.add("High request rate: " + log.getRequestsLastMinute() + " req/min — possible bot activity");
             return 25;
-        } else if (log.getRequestsLastMinute() > 30) {
+        } else if (log.getRequestsLastMinute() > 80) {
             reasons.add("Elevated request rate: " + log.getRequestsLastMinute() + " req/min");
             return 10;
         }
@@ -238,16 +238,18 @@ public class AnomalyDetectionService {
      * Track request timestamps for rate limiting (called from JwtFilter).
      */
     public int trackRequest(Long userId) {
+        if (userId == null) return 0;
         long now = System.currentTimeMillis();
         long oneMinuteAgo = now - 60_000;
 
         List<Long> timestamps = requestTimestamps.computeIfAbsent(userId, k -> Collections.synchronizedList(new ArrayList<>()));
 
-        // Clean old entries
-        timestamps.removeIf(t -> t < oneMinuteAgo);
-        timestamps.add(now);
-
-        return timestamps.size();
+        // Synchronization block to prevent ConcurrentModificationException
+        synchronized (timestamps) {
+            timestamps.removeIf(t -> t < oneMinuteAgo);
+            timestamps.add(now);
+            return timestamps.size();
+        }
     }
 
     // ─── Statistics ─────────────────────────────────────────────────
