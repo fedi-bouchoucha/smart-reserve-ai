@@ -1,0 +1,96 @@
+@startuml
+skinparam style strictuml
+skinparam ParticipantPadding 20
+skinparam BoxPadding 15
+skinparam SequenceMessageAlign left
+skinparam SequenceGroupBodyBackgroundColor transparent
+skinparam NoteBackgroundColor #FFFDE7
+skinparam NoteBorderColor #B8860B
+
+title Diagramme de Séquence : Recommander Chaises (Sans couche Redis)
+
+actor "Employé" as User
+
+box "Frontend" #D6EAF8
+  participant "Frontend\nReact\n<<component>>" as Frontend
+  participant "api.js\n<<axios>>\nIntercepteur JWT" as ApiJs
+end box
+
+box "Backend : Spring Boot" #D5F5E3
+  participant "JwtAuthFilter\n.java" as JWT
+  participant "RecommendationController\n.java\n<<controller>>" as Controller
+  participant "RecommendationService\n.java\n<<service>>" as Service
+end box
+
+box "Database" #FEF9E7
+  database "Database\n<<PostgreSQL>>" as DB
+  participant "OpenAI API\n<<external>>\nGPT-3.5" as AI
+end box
+
+' ─── Steps 1–3 : Employé → Frontend → api.js → JWT ──────────────────────────
+User -> Frontend : 1. Clic "Obtenir des recommandations"
+activate Frontend
+
+Frontend -> ApiJs : 2. getRecommendations(data)
+activate ApiJs
+
+note right of ApiJs : Intercepteur :\nAttach Bearer token\ndepuis localStorage
+
+ApiJs -> JWT : 3. POST /api/recommendations/generate\n   Authorization: Bearer <token>
+activate JWT
+
+' ─── Alt : Validation JWT ─────────────────────────────────────────────────────
+alt [token invalide]
+  JWT --> ApiJs : 16. 401 Unauthorized
+
+  note right of ApiJs : Intercepteur 401 :\nTente refresh token\n→ /api/auth/refreshtoken
+
+  ApiJs --> Frontend : 17. Error (refresh échoué)
+  Frontend --> User : 18. Redirection vers /login
+
+else [token valide]
+  JWT -> Controller : 4. Requête authentifiée
+  activate Controller
+
+  ' ─── Step 5 : Controller → Service ──────────────────────────────────────────
+  Controller -> Service : 5. generateRecommendations(request)
+  activate Service
+
+  ' ─── Steps 6–7 : Historique utilisateur ─────────────────────────────────────
+  Service -> DB : 6. fetchUserHistory(userId)
+  activate DB
+  DB --> Service : 7. data : Historique utilisateur
+  deactivate DB
+
+  ' ─── Steps 8–9 : Chaises disponibles ────────────────────────────────────────
+  Service -> DB : 8. findAvailableChairs(date)
+  activate DB
+  DB --> Service : 9. data : Chaises disponibles
+  deactivate DB
+
+  note over DB : Filtre : Date &&\nstatut disponible
+
+  ' ─── Steps 10–11 : Appel OpenAI ─────────────────────────────────────────────
+  Service -> AI : 10. POST prompt de recommandation\n    (contexte utilisateur + chaises disponibles)
+  activate AI
+  AI --> Service : 11. JSON (Recommandations classées)
+  deactivate AI
+
+  ' ─── Step 12 : Retour Service ────────────────────────────────────────────────
+  Service --> Controller : 12. RecommendationResponse
+  deactivate Service
+
+  ' ─── Steps 13–15 : Retour chaîne ─────────────────────────────────────────────
+  Controller --> JWT : 13. 201 Created (json)
+  deactivate Controller
+
+  JWT --> ApiJs : 14. response.data
+  ApiJs --> Frontend : 15. Top 3 Chaises (json)
+  Frontend --> User : Afficher Top 3 Chaises recommandées
+end
+
+deactivate JWT
+deactivate ApiJs
+deactivate Frontend
+
+@enduml

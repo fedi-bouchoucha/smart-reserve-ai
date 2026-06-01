@@ -1,0 +1,48 @@
+@startuml
+title Diagramme d'Activité : Voir Statistiques (Security Monitor)
+
+skinparam ActivityBackgroundColor #A8DADC
+skinparam ActivityBorderColor #457B9D
+skinparam ActivityFontColor #000000
+skinparam ActivityDiamondBackgroundColor #1D3557
+skinparam ActivityDiamondFontColor #FFFFFF
+skinparam ActivityDiamondBorderColor #1D3557
+skinparam ArrowColor #457B9D
+skinparam SwimlaneBorderColor #888888
+skinparam SwimlaneWidth 230
+
+|Administrateur|
+start
+:Naviguer vers\nSecurity Monitor;
+
+|Frontend|
+:Afficher le chargement;
+:Envoyer requête\nGET /admin/security/stats\n(via api.js + Bearer token);
+
+|Backend|
+:Vérifier le rôle\n@PreAuthorize("ADMIN");
+
+if ([rôle non autorisé]) then
+  |Frontend|
+  :Afficher erreur\n403 Forbidden;
+else ([rôle autorisé])
+  |Backend|
+  :Appeler\nAnomalyDetectionService\n.getStats();
+
+  |Base de données|
+  :Exécuter les requêtes\nde comptage;
+  :Retourner les\nrésultats;
+
+  |Backend|
+  :Compiler les données\net générer la réponse JSON;
+
+  |Frontend|
+  :Mettre à jour l'affichage\ndes statistiques;
+
+  |Administrateur|
+  :Consulter les\nstatistiques;
+endif
+
+|Frontend|
+stop
+@enduml

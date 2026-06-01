@@ -1,0 +1,63 @@
+@startuml
+skinparam style strictuml
+skinparam ParticipantPadding 20
+skinparam BoxPadding 15
+skinparam SequenceMessageAlign left
+skinparam SequenceGroupBodyBackgroundColor transparent
+skinparam NoteBackgroundColor #FFFDE7
+skinparam NoteBorderColor #B8860B
+
+title Diagramme de Séquence : Recommandation d'Itinéraire (Mistral AI)
+
+actor "Utilisateur" as User
+
+box "Frontend" #D6EAF8
+  participant "ItinerayPage.vue\n<<component>>" as Vue
+  participant "RecommendationService.js\n<<service>>" as JS
+end box
+
+box "Backend : Laravel" #D5F5E3
+  participant "RecommendationController.php\n<<controller>>" as Controller
+  participant "MistralService.php\n<<service>>" as Service
+end box
+
+box "Moteur IA" #FEF9E7
+  participant "Mistral AI API\n<<external>>" as AI
+end box
+
+User -> Vue : Clic "Générer l'itinéraire"
+activate Vue
+
+Vue -> JS : 1. generateItinerary(preferences)
+activate JS
+
+JS -> Controller : 2. POST /api/recommendations/generate\n(preferences)
+activate Controller
+
+Controller -> Service : 3. generateItinerary(preferences)
+activate Service
+
+Service -> AI : 4. POST /chat/completions (Prompt)
+activate AI
+AI --> Service : 5. Réponse JSON
+deactivate AI
+
+Service -> Service : 6. json_decode($content, true)
+
+alt [Succès : status = 200]
+  Service --> Controller : 7a. Retourne array (Itinéraire)
+  Controller -> Controller : 8a. json($itinerary)
+  Controller --> JS : 9a. 200 OK (status: success, data)
+  JS --> Vue : 10a. Afficher l'itinéraire (afficher itinerary)
+else [Erreur : status = 500]
+  Service --> Controller : 7b. throw Exception('Failed to generate...')
+  deactivate Service
+  Controller --> JS : 9b. 500 Error (status: error, message)
+  deactivate Controller
+  JS --> Vue : 10b. Afficher message d'erreur ("try again")
+  deactivate JS
+end
+
+deactivate Vue
+
+@enduml

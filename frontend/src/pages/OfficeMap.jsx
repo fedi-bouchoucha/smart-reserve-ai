@@ -339,7 +339,7 @@ export default function OfficeMap({ pickerMode = false, pickerDate = null, onCha
             {/* Title Side / Design center */}
             <text x="650" y="35" fontSize="16" fontWeight="700" fill="hsl(var(--muted-foreground))">Side / Design center</text>
             <text x="630" y="110" fontSize="14" fontWeight="600" fill="hsl(var(--muted-foreground))">Design center</text>
-            <text x="630" y="250" fontSize="14" fontWeight="600" fill="hsl(var(--muted-foreground))">24/7</text>
+            <text x="630" y="250" fontSize="14" fontWeight="600" fill="hsl(var(--muted-foreground))">ITCC</text>
 
             {/* Divider line */}
             <line x1="600" y1="20" x2="600" y2={SVG_H - 100} stroke="hsl(var(--border))" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" />

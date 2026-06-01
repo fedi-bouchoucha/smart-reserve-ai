@@ -1,0 +1,47 @@
+@startuml
+title Diagramme d'Activité : Recommander Chaises (Sans couche Redis)
+
+skinparam ActivityBackgroundColor #A8DADC
+skinparam ActivityBorderColor #457B9D
+skinparam ActivityFontColor #000000
+skinparam ActivityDiamondBackgroundColor #1D3557
+skinparam ActivityDiamondFontColor #FFFFFF
+skinparam ActivityDiamondBorderColor #1D3557
+skinparam ArrowColor #457B9D
+skinparam SwimlaneBorderColor #888888
+skinparam SwimlaneWidth 220
+
+|Employé|
+start
+:Ouvrir l'interface\nde recommandation;
+
+|Frontend|
+:Afficher le formulaire\nde sélection de date;
+:Envoyer requête\nPOST /api/recommendations/generate\n+ token JWT;
+
+|Backend|
+:Vérifier le token JWT\net les droits d'accès;
+
+if ([droits non valides]) then
+  |Frontend|
+  :Afficher erreur\nd'authentification;
+else ([droits valides])
+  |Backend|
+  :Solliciter le\nRecommendationService;
+
+  |Base de données|
+  :Lire l'historique\net les préférences;
+  :Identifier les chaises\ndisponibles (date);
+
+  |Backend|
+  :Appeler l'API\nGPT-3.5 Turbo;
+  :Analyser la réponse JSON\n(Scores & Raisons);
+  :Compiler les données\net générer la réponse JSON;
+
+  |Frontend|
+  :Afficher les\nTop 3 recommandations;
+endif
+
+|Frontend|
+stop
+@enduml

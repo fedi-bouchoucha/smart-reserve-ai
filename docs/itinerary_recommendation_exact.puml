@@ -1,0 +1,38 @@
+@startuml
+title Diagramme de Flux : Système de Recommandation AI (React & Spring Boot)
+
+skinparam RectangleBackgroundColor #F4F6F7
+skinparam RectangleBorderColor #7F8C8D
+skinparam DefaultFontName "Helvetica"
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+
+' Front-End Components (Green blocks)
+rectangle "api.js\n(Axios Client)" as serviceJS #D5F5E3
+rectangle "SmartSuggestModal.jsx\n(React Component)" as page #D5F5E3
+
+' Back-End Components (Blue blocks)
+rectangle "RecommendationController.java" as controller #D6EAF8
+rectangle "RecommendationService.java" as service #D6EAF8
+
+' External API (Red/Pink block)
+rectangle "OpenAI API\n(GPT-3.5 Turbo)" as api #FADBD8
+
+' Positioning / hidden links for layout
+controller -[hidden]down-> service
+serviceJS -[hidden]down-> page
+service -[hidden]down-> api
+
+' Flow Connections
+serviceJS -right-> service : 1: generateRecommendations(request)
+service -down-> api : 2: POST( Url / chat / completions )
+api -up-> service : 3: response " JSON "
+service -> service : 4: objectMapper.readValue(content, ...)
+
+service -up-> controller : 5a: [ status=200 ] response "RecommendationResponse"\n5b: [ status=500 ] throw new Exception(...)
+controller -> controller : 6a: [ status=200 ] ResponseEntity.ok(response)
+
+controller -down-> serviceJS : 7a: [ status=200 ] response({"recommendations"}, 200)\n6b: [ status=500 ] response({"error", message}, 500)
+serviceJS -down-> page : 8a: [ status=200 ] setRecommendations(data)\n7b: [ status=500 ] afficher message d'erreur( "try again" )
+
+@enduml
