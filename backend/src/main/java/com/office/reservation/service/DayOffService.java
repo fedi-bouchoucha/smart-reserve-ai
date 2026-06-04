@@ -99,14 +99,9 @@ public class DayOffService {
                                 maxDaysOff, ym.getMonth().toString(), year, workingDays, currentTotalDaysOff));
             }
 
-            // check if user already has a ROOM reservation for this date (confirmed)
-            // we annul desk reservations automatically, but room bookings might be part of a team meeting, so we warn instead?
-            // Actually, for consistency, let's just annul everything.
-            List<com.office.reservation.entity.Reservation> reservations = reservationRepository.findActiveByUserIdAndDate(userId, date);
-            for (com.office.reservation.entity.Reservation res : reservations) {
-                res.setStatus(ReservationStatus.CANCELLED);
-                reservationRepository.save(res);
-            }
+            // DO NOT cancel reservations here.
+            // Reservations are only cancelled when the manager APPROVES the day-off.
+            // If the employee cancels this day-off before approval, the reservation stays intact.
 
             DayOff dayOff = new DayOff(user, date);
             dayOff.setStatus(ReservationStatus.PENDING_APPROVAL);
@@ -176,7 +171,19 @@ public class DayOffService {
     public DayOffResponse approveDayOff(Long id) {
         DayOff d = dayOffRepository.findById(id).orElseThrow(() -> new RuntimeException("Day off not found"));
         d.setStatus(ReservationStatus.CONFIRMED);
-        return mapToResponse(dayOffRepository.save(d));
+        DayOff saved = dayOffRepository.save(d);
+
+        // NOW cancel the desk/room reservations — only when manager explicitly approves the day-off.
+        // If the employee had previously cancelled the day-off, reservations were never touched.
+        Long userId = saved.getUser().getId();
+        LocalDate date = saved.getDate();
+        List<com.office.reservation.entity.Reservation> reservations = reservationRepository.findActiveByUserIdAndDate(userId, date);
+        for (com.office.reservation.entity.Reservation res : reservations) {
+            res.setStatus(ReservationStatus.CANCELLED);
+            reservationRepository.save(res);
+        }
+
+        return mapToResponse(saved);
     }
 
     @Transactional

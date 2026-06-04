@@ -400,7 +400,7 @@ export default function EmployeeDashboard() {
                                         <td style={{ fontWeight: 600 }}>{r.date}</td>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <div className="badge-ui badge-indigo">🪑 {r.chairInfo}</div>
+                                                <div className="badge-ui badge-indigo">🪑 {r.chairInfo ? r.chairInfo.replace('Chair', 'Desk') : 'Desk'}</div>
                                                 {r.status === 'PENDING_APPROVAL' && (
                                                     <div className="badge-ui" style={{ background: 'hsl(var(--warning) / 0.1)', color: 'hsl(var(--warning))' }}>Pending Manager</div>
                                                 )}
@@ -412,7 +412,6 @@ export default function EmployeeDashboard() {
                                         <td style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                                 <button className="btn-ui btn-outline btn-sm" disabled={r.status === 'PENDING_APPROVAL' || r.status === 'AUTO_ASSIGNED'} onClick={() => { setShowChangeModal(r); setNewChangeDate(''); }}>Change</button>
-                                                <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} disabled={r.status === 'AUTO_ASSIGNED'} onClick={() => handleDeleteReservation(r.id)}>Cancel</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -721,7 +720,7 @@ export default function EmployeeDashboard() {
                             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9 }} className="modal-content modal-modern-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
                                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Request Change</h2>
                                 <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '1.5rem' }}>
-                                    For booking on <strong>{showChangeModal.date}</strong> ({showChangeModal.chairInfo || showChangeModal.meetingRoomName}).
+                                    For booking on <strong>{showChangeModal.date}</strong> ({(showChangeModal.chairInfo ? showChangeModal.chairInfo.replace('Chair', 'Desk') : '') || showChangeModal.meetingRoomName}).
                                 </p>
                                 
                                 <div className="form-group">

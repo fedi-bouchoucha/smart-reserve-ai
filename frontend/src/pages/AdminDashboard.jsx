@@ -291,7 +291,7 @@ export default function AdminDashboard() {
                                     <td style={{ fontWeight: 500 }}>{r.userName}</td>
                                     <td>
                                         <div className="badge-ui badge-indigo">
-                                            {r.chairId ? '🪑 Desk' : '🏢 Room'}
+                                            {r.chairId ? (r.chairInfo ? `🪑 ${r.chairInfo.replace('Chair', 'Desk')}` : `🪑 Desk ${r.chairId}`) : (r.meetingRoomName ? `🏢 ${r.meetingRoomName}` : '🏢 Room')}
                                         </div>
                                     </td>
                                     <td>{r.date}</td>

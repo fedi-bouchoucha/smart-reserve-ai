@@ -327,7 +327,7 @@ export default function ManagerDashboard() {
                                         <tr key={da.id}>
                                             <td style={{ fontWeight: 600 }}>{da.userName}</td>
                                             <td><div className="badge-ui" style={{ background: 'hsl(var(--warning) / 0.1)', color: 'hsl(var(--warning))', fontWeight: 700 }}>{da.date}</div></td>
-                                            <td><div style={{ fontSize: '0.875rem' }}>🪑 {da.chairInfo}</div></td>
+                                            <td><div style={{ fontSize: '0.875rem' }}>🪑 {da.chairInfo ? da.chairInfo.replace('Chair', 'Desk') : 'Desk'}</div></td>
                                             <td style={{ textAlign: 'right' }}>
                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                                     <button className="btn-ui btn-primary btn-sm" onClick={() => handleDeskApproval(da.id, 'approve')}><Check size={16} /><span>Approve</span></button>
@@ -466,7 +466,7 @@ export default function ManagerDashboard() {
                                                         <td>{r.date}</td>
                                                         <td>
                                                             <div className="badge-ui badge-indigo">
-                                                                {r.chairId ? '🪑 Desk' : '🏢 Room'}
+                                                                {r.chairId ? (r.chairInfo ? `🪑 ${r.chairInfo.replace('Chair', 'Desk')}` : `🪑 Desk ${r.chairId}`) : (r.meetingRoomName ? `🏢 ${r.meetingRoomName}` : '🏢 Room')}
                                                             </div>
                                                         </td>
                                                     </tr>

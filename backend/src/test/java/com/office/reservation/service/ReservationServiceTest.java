@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationEventPublisher;
+import com.office.reservation.service.NotificationService;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -17,7 +18,11 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import java.util.function.Supplier;
 
 class ReservationServiceTest {
 
@@ -39,14 +44,22 @@ class ReservationServiceTest {
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private DistributedLockService lockService;
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private ReservationService reservationService;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(lockService.acquireLock(anyString(), anyLong())).thenReturn(true);
+        // Make executeWithLock actually invoke the supplier instead of returning null
+        doAnswer(inv -> {
+            Supplier<?> supplier = inv.getArgument(3);
+            return supplier.get();
+        }).when(lockService).executeWithLock(anyString(), anyLong(), anyLong(), any());
     }
 
     @Test
@@ -71,8 +84,13 @@ class ReservationServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(chairRepository.findById(1L)).thenReturn(Optional.of(chair));
+        when(chairRepository.findByIdWithLock(1L)).thenReturn(Optional.of(chair));
         when(reservationRepository.existsDeskReservationForUserAndDate(any(), any())).thenReturn(false);
+        when(dayOffRepository.existsByUserIdAndDateAndStatus(any(), any(), any())).thenReturn(false);
+        when(homeOfficeRepository.existsByUserIdAndDate(any(), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingChairReservation(any(), any(), any(), any())).thenReturn(false);
         when(reservationRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+        doNothing().when(eventPublisher).publishEvent(any());
 
         // Act
         ReservationResponse response = reservationService.createReservation(1L, request);

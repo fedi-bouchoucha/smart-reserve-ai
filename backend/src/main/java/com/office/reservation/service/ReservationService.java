@@ -385,6 +385,10 @@ public class ReservationService {
         Reservation res = reservationRepository.findById(reservationId).orElseThrow();
         if (!res.getUser().getId().equals(userId)) throw new RuntimeException("Unauthorized");
 
+        if (res.getUser().getRole() == Role.EMPLOYEE) {
+            throw new RuntimeException("Employees are not allowed to cancel reservations. You can only request a change.");
+        }
+
         if (res.getStatus() == ReservationStatus.AUTO_ASSIGNED) {
             throw new RuntimeException("Auto-assigned reservations cannot be deleted by employees.");
         }

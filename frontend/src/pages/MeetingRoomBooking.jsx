@@ -264,7 +264,7 @@ export default function MeetingRoomBooking() {
                                     </div>
                                 </td>
                                 <td style={{ textAlign: 'right' }}>
-                                    <button className="btn-ui btn-ghost btn-sm" style={{ color: 'hsl(var(--destructive))' }} onClick={() => handleCancelBooking(r.id)}>Cancel</button>
+                                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>No Actions</span>
                                 </td>
                             </tr>
                         ))}
