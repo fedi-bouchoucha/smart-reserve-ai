@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "<div align=\"center\">\r   <h3>A modern, intelligent workspace booking platform tailored for agile teams.</h3>\r </div>",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd frontend && npm run start"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fedi-bouchoucha/smart-reserve-ai.git"
