@@ -3,10 +3,14 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "vite preview --host 0.0.0.0 --port $PORT"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
@@ -15,16 +19,16 @@
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
     "axios": "^1.6.5",
+    "firebase": "^10.7.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.21.3",
     "recharts": "^3.8.1",
     "sockjs-client": "^1.6.1",
-    "stompjs": "^2.3.3",
-    "firebase": "^10.7.1",
-    "react-hot-toast": "^2.4.1"
+    "stompjs": "^2.3.3"
   },
   "devDependencies": {
     "@types/react": "^18.2.48",
