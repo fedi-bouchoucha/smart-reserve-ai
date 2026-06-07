@@ -4,7 +4,8 @@
   "description": "<div align=\"center\">\r   <h3>A modern, intelligent workspace booking platform tailored for agile teams.</h3>\r </div>",
   "main": "index.js",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
+    "postinstall": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm run build",
     "start": "cd frontend && npm run start"
   },
   "repository": {
