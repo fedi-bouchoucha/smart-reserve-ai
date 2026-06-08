@@ -1,0 +1,57 @@
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: smart_office_db
+    restart: always
+    environment:
+      POSTGRES_DB: smart_office_db
+      POSTGRES_USER: smart_user
+      POSTGRES_PASSWORD: trytoguessit12345
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: smart_office_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smart_office_backend
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/smart_office_db
+      SPRING_DATASOURCE_USERNAME: smart_user
+      SPRING_DATASOURCE_PASSWORD: trytoguessit12345
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-YOUR_API_KEY_HERE}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smart_office_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:

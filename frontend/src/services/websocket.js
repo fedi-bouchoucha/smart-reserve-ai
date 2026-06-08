@@ -23,7 +23,7 @@ class WebSocketService {
         // Cleanup existing connection if any
         this.disconnect();
 
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('/ws');
         this.stompClient = Stomp.over(socket);
         this.stompClient.debug = () => {}; // No-op for debug to keep console clean
 

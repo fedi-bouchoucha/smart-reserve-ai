@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import axios from "axios";
+import api from "./services/api";
 
 // Your web app's Firebase configuration
 // REPLACE THIS with your actual project config from Firebase Console
@@ -34,13 +34,7 @@ export const requestForToken = () => {
 
 const saveTokenToBackend = async (token) => {
   try {
-    const apiToken = localStorage.getItem("token");
-    if (!apiToken) return;
-
-    await axios.post("http://localhost:8080/api/auth/fcm-token", 
-      { token }, 
-      { headers: { Authorization: `Bearer ${apiToken}` } }
-    );
+    await api.post("/auth/fcm-token", { token });
     console.log("FCM Token saved to backend");
   } catch (err) {
     console.error("Failed to save FCM Token to backend", err);

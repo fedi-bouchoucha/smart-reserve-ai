@@ -67,6 +67,10 @@ export default function MeetingRoomBooking() {
     };
 
     const checkRoomAvailability = async () => {
+        if (meetingStartTime < "08:00" || meetingEndTime > "17:00" || meetingStartTime >= meetingEndTime) {
+            setRoomAvailable(false);
+            return;
+        }
         try {
             const res = await api.get(`/reservations/rooms/check-availability?roomId=${selectedRoom}&date=${selectedDate}&startTime=${meetingStartTime}&endTime=${meetingEndTime}`);
             setRoomAvailable(res.data.available);
@@ -75,6 +79,14 @@ export default function MeetingRoomBooking() {
 
     const handleBookRoom = async () => {
         if (!selectedRoom || !selectedDate) return;
+        if (meetingStartTime < "08:00" || meetingEndTime > "17:00") {
+            setMessage({ type: 'error', text: 'Meeting room reservations are only allowed between 8:00 AM and 5:00 PM.' });
+            return;
+        }
+        if (meetingStartTime >= meetingEndTime) {
+            setMessage({ type: 'error', text: 'Start time must be before end time.' });
+            return;
+        }
         setLoading(true);
         try {
             await api.post('/reservations/meeting-room', {

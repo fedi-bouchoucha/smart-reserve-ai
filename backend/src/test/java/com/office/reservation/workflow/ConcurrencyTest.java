@@ -79,6 +79,9 @@ class ConcurrencyTest {
         AtomicInteger failureCount = new AtomicInteger(0);
 
         LocalDate date = LocalDate.now().plusMonths(2); // Far future to avoid window rules
+        while (date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+            date = date.plusDays(1);
+        }
 
         for (int i = 0; i < numThreads; i++) {
             final Long uId = userIds.get(i);

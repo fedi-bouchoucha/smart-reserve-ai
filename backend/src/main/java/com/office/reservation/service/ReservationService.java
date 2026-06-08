@@ -82,6 +82,16 @@ public class ReservationService {
             throw new RuntimeException("Cannot reserve on weekends.");
         }
 
+        // Meeting room booking hours rule: 8 AM to 5 PM
+        if (request.getMeetingRoomId() != null) {
+            if (!start.isBefore(end)) {
+                throw new RuntimeException("Start time must be before end time.");
+            }
+            if (start.isBefore(LocalTime.of(8, 0)) || end.isAfter(LocalTime.of(17, 0))) {
+                throw new RuntimeException("Meeting room reservations are only allowed between 8:00 AM and 5:00 PM.");
+            }
+        }
+
         // For desk (chair) reservations, check duplicate booking on same date
         if (request.getChairId() != null) {
             if (reservationRepository.existsDeskReservationForUserAndDate(userId, date)) {
@@ -285,6 +295,15 @@ public class ReservationService {
         // Weekends check
         if (request.getDate().getDayOfWeek() == DayOfWeek.SATURDAY || request.getDate().getDayOfWeek() == DayOfWeek.SUNDAY) {
             throw new RuntimeException("Meeting rooms are closed on weekends.");
+        }
+
+        if (!start.isBefore(end)) {
+            throw new RuntimeException("Start time must be before end time.");
+        }
+
+        // Meeting room booking hours rule: 8 AM to 5 PM
+        if (start.isBefore(LocalTime.of(8, 0)) || end.isAfter(LocalTime.of(17, 0))) {
+            throw new RuntimeException("Meeting room reservations are only allowed between 8:00 AM and 5:00 PM.");
         }
 
         // Only check: is the room available at this time?
