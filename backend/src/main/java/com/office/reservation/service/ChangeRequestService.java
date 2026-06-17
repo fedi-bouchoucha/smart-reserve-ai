@@ -169,7 +169,9 @@ public class ChangeRequestService {
         map.put("requestedById", cr.getRequestedBy().getId());
         map.put("newDate", cr.getNewDate());
         map.put("newChairId", cr.getNewChair() != null ? cr.getNewChair().getId() : null);
+        map.put("newDeskName", cr.getNewChair() != null ? cr.getNewChair().getEmplacement().getName() : null);
         map.put("newMeetingRoomId", cr.getNewMeetingRoom() != null ? cr.getNewMeetingRoom().getId() : null);
+        map.put("newMeetingRoomName", cr.getNewMeetingRoom() != null ? cr.getNewMeetingRoom().getName() : null);
         map.put("status", cr.getStatus().name());
         map.put("managerComment", cr.getManagerComment());
         map.put("createdAt", cr.getCreatedAt());

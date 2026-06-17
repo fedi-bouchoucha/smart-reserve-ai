@@ -15,17 +15,20 @@ public class DataInitializer implements CommandLineRunner {
     private final ChairRepository chairRepository;
     private final MeetingRoomRepository meetingRoomRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ReservationRepository reservationRepository;
 
     public DataInitializer(UserRepository userRepository,
             EmplacementRepository emplacementRepository,
             ChairRepository chairRepository,
             MeetingRoomRepository meetingRoomRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            ReservationRepository reservationRepository) {
         this.userRepository = userRepository;
         this.emplacementRepository = emplacementRepository;
         this.chairRepository = chairRepository;
         this.meetingRoomRepository = meetingRoomRepository;
         this.passwordEncoder = passwordEncoder;
+        this.reservationRepository = reservationRepository;
     }
 
     @Override
@@ -129,16 +132,23 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
         }
 
-        // Cleanup: Delete any emplacements > 44 (like 72 if created)
+        // Cleanup: Delete any emplacements that are not "1" to "44"
+        List<String> validDesks = new java.util.ArrayList<>();
+        for (int i = 1; i <= 44; i++) {
+            validDesks.add(String.valueOf(i));
+        }
         emplacementRepository.findAll().forEach(emp -> {
-            try {
-                int num = Integer.parseInt(emp.getName());
-                if (num > 44) {
-                    chairRepository.findByEmplacementId(emp.getId()).forEach(c -> chairRepository.delete(c));
-                    emplacementRepository.delete(emp);
-                }
-            } catch (NumberFormatException e) {
-                // Not a numeric desk, ignore (like 'Meeting Room' if it were an emplacement)
+            String name = emp.getName();
+            if (!validDesks.contains(name) && !name.equalsIgnoreCase("Meeting Room")) {
+                chairRepository.findByEmplacementId(emp.getId()).forEach(c -> {
+                    reservationRepository.findAll().forEach(r -> {
+                        if (r.getChair() != null && r.getChair().getId().equals(c.getId())) {
+                            reservationRepository.delete(r);
+                        }
+                    });
+                    chairRepository.delete(c);
+                });
+                emplacementRepository.delete(emp);
             }
         });
         

@@ -208,8 +208,8 @@ public class ReservationController {
     }
 
     @GetMapping("/available/chairs/{date}")
-    public ResponseEntity<List<ChairResponse>> getAvailableChairs(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(reservationService.getAvailableChairs(date));
+    public ResponseEntity<List<ChairResponse>> getAvailableChairs(@AuthenticationPrincipal UserDetails userDetails, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(reservationService.getAvailableChairs(date, userDetails.getUsername()));
     }
 
     @GetMapping("/available/rooms/{date}")

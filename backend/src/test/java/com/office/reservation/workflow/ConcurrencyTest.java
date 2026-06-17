@@ -78,10 +78,11 @@ class ConcurrencyTest {
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failureCount = new AtomicInteger(0);
 
-        LocalDate date = LocalDate.now().plusMonths(2); // Far future to avoid window rules
-        while (date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
-            date = date.plusDays(1);
+        LocalDate tempDate = LocalDate.now().plusMonths(2); // Far future to avoid window rules
+        while (tempDate.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || tempDate.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+            tempDate = tempDate.plusDays(1);
         }
+        final LocalDate date = tempDate;
 
         for (int i = 0; i < numThreads; i++) {
             final Long uId = userIds.get(i);

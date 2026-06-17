@@ -279,7 +279,7 @@ export default function ManagerDashboard() {
                                             <td><div className="badge-ui badge-indigo" style={{ fontWeight: 700 }}>{cr.newDate || '—'}</div></td>
                                             <td>
                                                 <div style={{ fontSize: '0.875rem' }}>
-                                                    {cr.newChairId ? `🪑 Desk ${cr.newChairId}` : cr.newMeetingRoomId ? `🏢 Room ${cr.newMeetingRoomId}` : '—'}
+                                                    {cr.newChairId ? `🪑 Desk ${cr.newDeskName || cr.newChairId}` : cr.newMeetingRoomId ? `🏢 Room ${cr.newMeetingRoomName || cr.newMeetingRoomId}` : '—'}
                                                 </div>
                                             </td>
                                             <td style={{ textAlign: 'right' }}>

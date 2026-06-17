@@ -466,10 +466,16 @@ public class ReservationService {
         return MINIMUM_DAILY_PRESENCE;
     }
 
-    @Cacheable(value = "deskAvailability", key = "#date.toString()")
-    public List<ChairResponse> getAvailableChairs(LocalDate date) {
+    public List<ChairResponse> getAvailableChairs(LocalDate date, String username) {
         return chairRepository.findAvailableChairs(date, LocalTime.of(9,0), LocalTime.of(17,0), Arrays.asList(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_APPROVAL, ReservationStatus.AUTO_ASSIGNED))
                 .stream()
+                .filter(c -> {
+                    String deskName = c.getEmplacement().getName();
+                    if ((deskName.equals("1") || deskName.equalsIgnoreCase("E01")) && !username.equalsIgnoreCase("employee63")) return false;
+                    if ((deskName.equals("43") || deskName.equalsIgnoreCase("E43")) && !username.equalsIgnoreCase("employee70")) return false;
+                    if ((deskName.equals("44") || deskName.equalsIgnoreCase("E44")) && !username.equalsIgnoreCase("employee71")) return false;
+                    return true;
+                })
                 .map(c -> new ChairResponse(
                         c.getId(),
                         c.getNumber(),

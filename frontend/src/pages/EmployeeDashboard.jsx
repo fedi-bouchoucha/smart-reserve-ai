@@ -146,7 +146,12 @@ export default function EmployeeDashboard() {
     const loadModalAvailability = async () => {
         try {
             const chairRes = await api.get(`/reservations/available/chairs/${newChangeDate}`);
-            setModalAvailableChairs(chairRes.data || []);
+            const chairs = (chairRes.data || []).sort((a, b) => {
+                const na = parseInt(a.emplacementName || a.number, 10);
+                const nb = parseInt(b.emplacementName || b.number, 10);
+                return na - nb;
+            });
+            setModalAvailableChairs(chairs);
         } catch (e) { console.error(e); }
     };
 
@@ -741,8 +746,8 @@ export default function EmployeeDashboard() {
                                                 onClick={() => setNewChangeChairId(r.id)}
                                                 style={{ padding: '0.5rem', fontSize: '0.85rem' }}
                                             >
-                                                <div style={{ fontWeight: 600 }}>Desk {r.number}</div>
-                                                <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Floor {r.floor}</div>
+                                                <div style={{ fontWeight: 600 }}>Desk {r.emplacementName || r.number}</div>
+                                                <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Floor 3 — Office Floor</div>
                                             </div>
                                         ))}
                                     </div>
