@@ -1,0 +1,199 @@
+1**
+1/
+%%file wordcount_tri.py
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+
+class WordCountTri(MRJob):
+    def steps(self):
+        return [
+            MRStep(mapper=self.mapper_get_words,
+                   combiner=self.reducer_count_words,
+                   reducer=self.reducer_count_words),
+            MRStep(mapper=self.mapper_inverse,
+                   reducer=self.reducer_sorted,
+                   jobconf={'mapreduce.job.reduces': 1})
+        ]
+
+    def mapper_get_words(self, _, line):
+        for word in line.split():
+            yield word, 1
+
+    def reducer_count_words(self, word, counts):
+        yield word, sum(counts)
+
+    def mapper_inverse(self, word, count):
+        # Remplissage avec des zéros : le tri se fait sur du texte,
+        # donc "10" passerait avant "9" sans cette précaution
+        yield "%08d" % count, word
+
+    def reducer_sorted(self, count, words):
+        for w in words:
+            yield w, int(count)
+
+if __name__ == '__main__':
+    WordCountTri.run()
+
+
+2/
+! python3 wordcount_tri.py shakespeare.txt | tail -20
+! python3 wordcount_tri.py -r hadoop hdfs:///user/uti/shakespeare.txt > resultat_tri.txt
+
+
+
+2**
+1/
+%%file wordcount_tri_desc.py
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+
+MAX = 99999999
+
+class WordCountTriDesc(MRJob):
+    def steps(self):
+        return [
+            MRStep(mapper=self.mapper_get_words,
+                   combiner=self.reducer_count_words,
+                   reducer=self.reducer_count_words),
+            MRStep(mapper=self.mapper_inverse,
+                   reducer=self.reducer_sorted,
+                   jobconf={'mapreduce.job.reduces': 1})
+        ]
+
+    def mapper_get_words(self, _, line):
+        for word in line.split():
+            yield word, 1
+
+    def reducer_count_words(self, word, counts):
+        yield word, sum(counts)
+
+    def mapper_inverse(self, word, count):
+        yield "%08d" % (MAX - count), word
+
+    def reducer_sorted(self, key, words):
+        for w in words:
+            yield w, MAX - int(key)
+
+if __name__ == '__main__':
+    WordCountTriDesc.run()
+2/
+! head -3 production_petrole.csv
+
+3**
+%%file prod_annuelle.py
+import csv
+from mrjob.job import MRJob
+
+# À ADAPTER selon l'en-tête du CSV
+COL_DATE, COL_CHAMP, COL_PROD = 0, 1, 2
+
+class ProdAnnuelle(MRJob):
+    def mapper(self, _, line):
+        try:
+            row = next(csv.reader([line]))
+            annee = row[COL_DATE][:4]
+            prod = float(row[COL_PROD].replace(',', '.'))
+            yield (row[COL_CHAMP], annee), prod
+        except (ValueError, IndexError):
+            pass  # ignore l'en-tête et les lignes invalides
+
+    def combiner(self, key, values):
+        yield key, sum(values)
+
+    def reducer(self, key, values):
+        yield key, sum(values)
+
+if __name__ == '__main__':
+    ProdAnnuelle.run()
+
+
+4**
+1/
+%%file champ_max_mois.py
+import csv
+from mrjob.job import MRJob
+
+COL_DATE, COL_CHAMP, COL_PROD = 0, 1, 2
+
+class ChampMaxMois(MRJob):
+    def mapper(self, _, line):
+        try:
+            row = next(csv.reader([line]))
+            mois = row[COL_DATE][:7]          # AAAA-MM
+            prod = float(row[COL_PROD].replace(',', '.'))
+            yield mois, (prod, row[COL_CHAMP])
+        except (ValueError, IndexError):
+            pass
+
+    def reducer(self, mois, values):
+        prod, champ = max(values)             # compare d'abord la production
+        yield mois, (champ, prod)
+
+if __name__ == '__main__':
+    ChampMaxMois.run()
+2/
+! python3 prod_annuelle.py production_petrole.csv
+! python3 champ_max_mois.py production_petrole.csv
+
+
+5**
+
+%%file amis_communs.py
+from mrjob.job import MRJob
+
+class AmisCommuns(MRJob):
+    def mapper(self, _, line):
+        line = line.strip()
+        if not line:
+            return
+        user, amis = line.split(':')
+        user = int(user)
+        amis = [int(a) for a in amis.split(',') if a.strip()]
+        for ami in amis:
+            couple = "%d-%d" % (min(user, ami), max(user, ami))
+            yield couple, amis
+
+    def reducer(self, couple, listes):
+        listes = list(listes)
+        if len(listes) == 2:
+            communs = set(listes[0]) & set(listes[1])
+            yield couple, sorted(communs)
+
+if __name__ == '__main__':
+    AmisCommuns.run()
+2/
+! printf "10:20,30,40\n20:10,30,40\n30:10,20,40,50\n40:10,20,30,50\n50:30,40\n" > amis.txt
+! python3 amis_communs.py amis.txt
+
+6**
+1/
+%%file livres_par_auteur.py
+from mrjob.step import MRStep
+from mrjob.job import MRJob
+from mrjob.protocol import JSONValueProtocol
+
+class LivresParAuteur(MRJob):
+    INPUT_PROTOCOL = JSONValueProtocol
+
+    def steps(self):
+        return [MRStep(mapper=self.fmap,
+                       combiner=self.freduce,
+                       reducer=self.freduce)]
+
+    def fmap(self, _, book):
+        for auteur in book.get('authors', []):
+            yield auteur, 1
+
+    def freduce(self, auteur, values):
+        yield auteur, sum(values)
+
+if __name__ == '__main__':
+    LivresParAuteur.run()
+2/
+! wget https://training.uvt.tn/pluginfile.php/76245/mod_resource/content/1/assets/books.json
+! python3 livres_par_auteur.py books.json
+! hadoop fs -put books.json
+! python3 livres_par_auteur.py -r hadoop hdfs:///user/uti/books.json
+
+
+
